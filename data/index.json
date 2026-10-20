@@ -8,25 +8,38 @@
     "elo": 1650,
     "winsCount": 3,
     "stoppedBy": null,
-    "updatedAt": "2026-10-20T09:31:53.998Z",
+    "updatedAt": "2026-10-20T10:13:54.138Z",
     "botFile": "bots/MinhKiet_Top1.py",
     "profileFile": "competitors/user_seed_1.json"
   },
   {
     "rank": 2,
-    "id": "user_5882cd6d",
+    "id": "user_6865c570",
+    "username": "CaoThu_CPP",
+    "bestLanguage": "cpp",
+    "bestScore": 1640,
+    "elo": 1590,
+    "winsCount": 4,
+    "stoppedBy": "MinhKiet_Top1",
+    "updatedAt": "2026-10-20T15:14:04.996Z",
+    "botFile": "bots/CaoThu_CPP.cpp",
+    "profileFile": "competitors/user_6865c570.json"
+  },
+  {
+    "rank": 3,
+    "id": "user_513a25cf",
     "username": "SinhVien_TrungBinh",
     "bestLanguage": "python",
     "bestScore": 1300,
     "elo": 1590,
     "winsCount": 3,
     "stoppedBy": "MinhKiet_Top1",
-    "updatedAt": "2026-10-20T14:31:57.924Z",
+    "updatedAt": "2026-10-20T15:13:57.331Z",
     "botFile": "bots/SinhVien_TrungBinh.py",
-    "profileFile": "competitors/user_5882cd6d.json"
+    "profileFile": "competitors/user_513a25cf.json"
   },
   {
-    "rank": 3,
+    "rank": 4,
     "id": "user_seed_2",
     "username": "HoangAnh_Pro",
     "bestLanguage": "python",
@@ -34,12 +47,12 @@
     "elo": 1420,
     "winsCount": 2,
     "stoppedBy": "MinhKiet_Top1",
-    "updatedAt": "2026-10-20T10:31:53.998Z",
+    "updatedAt": "2026-10-20T11:13:54.139Z",
     "botFile": "bots/HoangAnh_Pro.py",
     "profileFile": "competitors/user_seed_2.json"
   },
   {
-    "rank": 4,
+    "rank": 5,
     "id": "user_seed_3",
     "username": "TuanHung_Coder",
     "bestLanguage": "python",
@@ -47,12 +60,12 @@
     "elo": 1210,
     "winsCount": 1,
     "stoppedBy": "HoangAnh_Pro",
-    "updatedAt": "2026-10-20T12:31:53.998Z",
+    "updatedAt": "2026-10-20T13:13:54.139Z",
     "botFile": "bots/TuanHung_Coder.py",
     "profileFile": "competitors/user_seed_3.json"
   },
   {
-    "rank": 5,
+    "rank": 6,
     "id": "user_seed_4",
     "username": "BaoNam_Newbie",
     "bestLanguage": "python",
@@ -60,7 +73,7 @@
     "elo": 980,
     "winsCount": 0,
     "stoppedBy": "TuanHung_Coder",
-    "updatedAt": "2026-10-20T13:31:53.998Z",
+    "updatedAt": "2026-10-20T14:13:54.139Z",
     "botFile": "bots/BaoNam_Newbie.py",
     "profileFile": "competitors/user_seed_4.json"
   }

@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>RPS Chess 9x9 AI Arena — Serverless CTF &amp; Realtime playhtml</title>
-  <link rel="stylesheet" href="./styles/main.css" />
+  <link rel="stylesheet" href="./styles/main.css?v=20261020-ui2" />
   <link rel="stylesheet" href="https://unpkg.com/playhtml@latest/dist/style.css" />
   <script src="https://cdn.jsdelivr.net/npm/lz-string@1.5.0/libs/lz-string.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
@@ -15,102 +15,187 @@
   <header class="topbar">
     <div class="brand">
       <div class="brand-logo">✊✋✌️</div>
-      <div>
-        <h1>RPS CHESS 9x9 — CTF AI ARENA</h1>
-        <p>Đấu trường 100% Client-Side trên GitHub Pages | Realtime playhtml &amp; CTF Cướp Cờ</p>
+      <div class="brand-text">
+        <div class="brand-title-row">
+          <h1>RPS CHESS 9x9</h1>
+          <span class="brand-tag">CTF AI ARENA</span>
+        </div>
+        <p>Đấu trường 100% Client-Side trên GitHub Pages | Realtime playhtml</p>
       </div>
     </div>
 
-    <nav class="main-nav-tabs">
+    <!-- 4 TABS CHÍNH - ẨN MẶC ĐỊNH CHO ĐẾN KHI ĐĂNG NHẬP -->
+    <nav id="mainNavTabs" class="main-nav-tabs" style="display: none;">
       <button class="main-tab-btn" data-maintab="practice" onclick="switchMainTab('practice')">
         <span class="tab-step">1</span> 🎮 Đấu Tập Tay &amp; Luật
       </button>
       <button class="main-tab-btn active" data-maintab="studio" onclick="switchMainTab('studio')">
-        <span class="tab-step">2</span> 💻 Phòng Lab Code &amp; Test 4 Bot
+        <span class="tab-step">2</span> 💻 Phòng Lab Code &amp; Test Bot
       </button>
       <button class="main-tab-btn" data-maintab="ladder" onclick="switchMainTab('ladder')">
         <span class="tab-step">3</span> ⚔️ Đấu Trường Cướp Cờ CTF
       </button>
       <button class="main-tab-btn" data-maintab="leaderboard" onclick="switchMainTab('leaderboard')">
-        <span class="tab-step">4</span> 🏆 Bảng Vàng &amp; Lịch Sử Cướp Cờ
+        <span class="tab-step">4</span> 🏆 Bảng Vàng &amp; Lịch Sử
       </button>
     </nav>
 
-    <!-- KHU VỰC TÀI KHOẢN ĐĂNG NHẬP / ĐĂNG KÝ -->
-    <div id="authHeaderSection" class="auth-header-section"></div>
+    <!-- KHU VỰC TÀI KHOẢN ĐĂNG NHẬP / PROFILE BADGE -->
+    <div id="authHeaderSection" class="auth-header-section">
+      <div class="topbar-guest-tag">🔒 Vui lòng đăng nhập để mở khóa</div>
+    </div>
   </header>
 
   <!-- ======================================================================= -->
   <!-- MÀN HÌNH CHÀO MỪNG & BẮT BUỘC ĐĂNG NHẬP / ĐĂNG KÝ (AUTH GATEWAY)         -->
   <!-- ======================================================================= -->
   <section id="authGatewayScreen" class="auth-gateway-screen">
-    <div class="gateway-hero">
-      <div class="gateway-logo">✊✋✌️</div>
-      <h1 class="gateway-title">RPS CHESS 9x9 — AI ARENA</h1>
-      <p class="gateway-subtitle">
-        Đấu trường lập trình AI Cờ Đấm - Lá - Kéo 9x9 • Mô hình CTF Cướp Cờ Realtime trên GitHub Pages.
-        <br/><b>Vui lòng đăng nhập hoặc tạo tài khoản để vào chơi và nộp code thi đấu!</b>
-      </p>
-      <div class="gateway-badges">
-        <span class="gate-pill">⚡ 100% Client-Side</span>
-        <span class="gate-pill">🟢 Realtime playhtml</span>
-        <span class="gate-pill">⚔️ CTF King of the Hill</span>
-        <span class="gate-pill">👑 Hỗ Trợ Admin &amp; Player</span>
-      </div>
-    </div>
-
-    <div class="gateway-card">
-      <div class="auth-modal-tabs">
-        <button id="gateTabLogin" class="auth-tab-btn active" onclick="switchGateAuthTab('login')">🔑 Đăng Nhập</button>
-        <button id="gateTabRegister" class="auth-tab-btn" onclick="switchGateAuthTab('register')">📝 Đăng Ký</button>
-      </div>
-
-      <div id="gateAlertBox" class="alert-box-error hidden" style="margin-bottom:12px;"></div>
-
-      <!-- FORM ĐĂNG NHẬP CỔNG CHÍNH -->
-      <form id="gateFormLogin" onsubmit="handleGateLoginSubmit(event)">
-        <div class="auth-form-group">
-          <label for="gateLoginId">Tên tài khoản hoặc Email:</label>
-          <input id="gateLoginId" class="auth-input" type="text" placeholder="Nhập username hoặc email..." required />
+    <div class="gateway-container">
+      <!-- CỘT TRÁI: GIỚI THIỆU ĐẤU TRƯỜNG & TÍNH NĂNG NỔI BẬT -->
+      <div class="gateway-hero-pane">
+        <div class="gateway-eyebrow">
+          <span class="live-dot"></span>
+          <span>SEASON 2026 • AI BATTLEGROUND</span>
         </div>
-        <div class="auth-form-group">
-          <label for="gateLoginPass">Mật khẩu:</label>
-          <input id="gateLoginPass" class="auth-input" type="password" placeholder="Nhập mật khẩu..." required />
-        </div>
-        <button type="submit" id="btnGateSubmitLogin" class="auth-btn-submit">Vào Đấu Trường Chơi Ngay →</button>
 
-        <div class="quick-login-row">
-          <span>⚡ <b>Đăng nhập nhanh 1-Click để kiểm thử:</b></span>
-          <div class="quick-btns">
-            <button type="button" class="btn-quick-admin" onclick="quickLogin('admin', 'admin123')">👑 Admin (admin123)</button>
-            <button type="button" class="btn-quick-user" onclick="quickLogin('MinhKiet_Top1', '123456')">👤 Player (123456)</button>
+        <h1 class="gateway-main-title">
+          RPS CHESS <span class="gradient-text">9x9</span>
+        </h1>
+
+        <p class="gateway-lead-text">
+          Đấu trường Trí tuệ Nhân tạo Cờ Đấm - Lá - Kéo 9x9. Thử thách giải thuật, tối ưu hóa nước đi và chiếm giữ Ngôi Vương King-of-the-Hill thời gian thực 100% Client-Side.
+        </p>
+
+        <div class="gateway-features-grid">
+          <div class="feat-card">
+            <div class="feat-icon">🎮</div>
+            <div class="feat-text">
+              <strong>Đấu Tập &amp; Luyện Nước Đi</strong>
+              <p>Mô phỏng 4 cấp độ Bot AI (Tập sự → Đại sư) vận hành trực tiếp trong trình duyệt không độ trễ.</p>
+            </div>
+          </div>
+
+          <div class="feat-card">
+            <div class="feat-icon">⚡</div>
+            <div class="feat-text">
+              <strong>Phòng Lab Code 0.05 Giây</strong>
+              <p>Soạn thảo JavaScript, Python, C++, Java và kiểm thử đồng thời với 4 Bot đối kháng siêu tốc.</p>
+            </div>
+          </div>
+
+          <div class="feat-card">
+            <div class="feat-icon">👑</div>
+            <div class="feat-text">
+              <strong>CTF King of the Hill Realtime</strong>
+              <p>Chiếm giữ Cờ Vương, đồng bộ trạng thái thời gian thực qua playhtml edge sync và chia sẻ bot.</p>
+            </div>
           </div>
         </div>
-      </form>
 
-      <!-- FORM ĐĂNG KÝ CỔNG CHÍNH -->
-      <form id="gateFormRegister" class="hidden" onsubmit="handleGateRegisterSubmit(event)">
-        <div class="auth-form-group">
-          <label for="gateRegUser">Tên tài khoản (3 - 20 ký tự):</label>
-          <input id="gateRegUser" class="auth-input" type="text" placeholder="Ví dụ: CaoThu_BTL..." required />
+        <div class="gateway-tech-tags">
+          <span class="tech-tag">⚡ 100% Client-Side</span>
+          <span class="tech-tag">🌐 GitHub Pages Ready</span>
+          <span class="tech-tag">🟢 playhtml Edge Sync</span>
+          <span class="tech-tag">🔒 WebCrypto SHA-256</span>
         </div>
-        <div class="auth-form-group">
-          <label for="gateRegEmail">Email:</label>
-          <input id="gateRegEmail" class="auth-input" type="email" placeholder="Ví dụ: user@arena.vn..." required />
+      </div>
+
+      <!-- CỘT PHẢI: THẺ ĐĂNG NHẬP / ĐĂNG KÝ HIỆN ĐẠI -->
+      <div class="gateway-card-pane">
+        <div class="gateway-card">
+          <div class="gateway-card-header">
+            <div class="card-icon-glow">🛡️</div>
+            <h2>Cổng Đấu Trường</h2>
+            <p>Đăng nhập hoặc đăng ký tài khoản để bắt đầu thi đấu</p>
+          </div>
+
+          <!-- TAB CHUYỂN ĐỔI ĐĂNG NHẬP / ĐĂNG KÝ 50-50 -->
+          <div class="auth-modal-tabs gateway-tab-switch">
+            <button id="gateTabLogin" class="auth-tab-btn active" onclick="switchGateAuthTab('login')">
+              🔑 Đăng Nhập
+            </button>
+            <button id="gateTabRegister" class="auth-tab-btn" onclick="switchGateAuthTab('register')">
+              📝 Đăng Ký
+            </button>
+          </div>
+
+          <div id="gateAlertBox" class="alert-box-error hidden"></div>
+
+          <!-- FORM ĐĂNG NHẬP -->
+          <form id="gateFormLogin" onsubmit="handleGateLoginSubmit(event)">
+            <div class="auth-form-group">
+              <label for="gateLoginId">Tên tài khoản hoặc Email:</label>
+              <div class="input-with-icon">
+                <span class="input-icon">👤</span>
+                <input id="gateLoginId" class="auth-input" type="text" placeholder="Nhập username hoặc email..." required autocomplete="username" />
+              </div>
+            </div>
+            <div class="auth-form-group">
+              <label for="gateLoginPass">Mật khẩu:</label>
+              <div class="input-with-icon">
+                <span class="input-icon">🔒</span>
+                <input id="gateLoginPass" class="auth-input" type="password" placeholder="Nhập mật khẩu..." required autocomplete="current-password" />
+              </div>
+            </div>
+            <button type="submit" id="btnGateSubmitLogin" class="auth-btn-submit glow-button">
+              🚀 Vào Đấu Trường Chơi Ngay →
+            </button>
+
+            <!-- KHU VỰC ĐĂNG NHẬP NHANH 1-CLICK DÀNH CHO GIÁM KHẢO / TEST -->
+            <div class="quick-demo-box">
+              <div class="quick-demo-header">
+                <span>⚡ <b>Khám phá nhanh 1-Click (Dành cho Giám khảo):</b></span>
+              </div>
+              <div class="quick-btns">
+                <button type="button" class="btn-quick-admin" onclick="quickLogin('admin', 'admin123')">
+                  👑 Admin (admin123)
+                </button>
+                <button type="button" class="btn-quick-user" onclick="quickLogin('MinhKiet_Top1', '123456')">
+                  👤 Player (123456)
+                </button>
+              </div>
+            </div>
+          </form>
+
+          <!-- FORM ĐĂNG KÝ -->
+          <form id="gateFormRegister" class="hidden" onsubmit="handleGateRegisterSubmit(event)">
+            <div class="auth-form-group">
+              <label for="gateRegUser">Tên tài khoản (3 - 20 ký tự):</label>
+              <div class="input-with-icon">
+                <span class="input-icon">👤</span>
+                <input id="gateRegUser" class="auth-input" type="text" placeholder="Ví dụ: CaoThu_BTL..." required />
+              </div>
+            </div>
+            <div class="auth-form-group">
+              <label for="gateRegEmail">Email liên hệ:</label>
+              <div class="input-with-icon">
+                <span class="input-icon">✉️</span>
+                <input id="gateRegEmail" class="auth-input" type="email" placeholder="Ví dụ: user@arena.vn..." required />
+              </div>
+            </div>
+            <div class="auth-form-group">
+              <label for="gateRegPass">Mật khẩu (ít nhất 6 ký tự):</label>
+              <div class="input-with-icon">
+                <span class="input-icon">🔒</span>
+                <input id="gateRegPass" class="auth-input" type="password" placeholder="Nhập mật khẩu an toàn..." required />
+              </div>
+            </div>
+            <div class="auth-form-group">
+              <label for="gateRegRole">Vai trò tài khoản:</label>
+              <div class="input-with-icon">
+                <span class="input-icon">🎭</span>
+                <select id="gateRegRole" class="auth-input auth-select">
+                  <option value="USER" selected>👤 Người chơi (Player) — Luyện tập, nộp bot &amp; cướp cờ</option>
+                  <option value="ADMIN">👑 Quản trị viên (Admin) — Có quyền tùy chỉnh luật chơi</option>
+                </select>
+              </div>
+            </div>
+            <button type="submit" id="btnGateSubmitRegister" class="auth-btn-submit glow-button">
+              ✨ Tạo Tài Khoản &amp; Vào Chơi →
+            </button>
+          </form>
         </div>
-        <div class="auth-form-group">
-          <label for="gateRegPass">Mật khẩu (ít nhất 6 ký tự):</label>
-          <input id="gateRegPass" class="auth-input" type="password" placeholder="Nhập mật khẩu..." required />
-        </div>
-        <div class="auth-form-group">
-          <label for="gateRegRole">Vai trò tài khoản:</label>
-          <select id="gateRegRole" class="auth-input" style="background:#0f131a; color:#fff;">
-            <option value="USER" selected>👤 Người chơi (Player)</option>
-            <option value="ADMIN">👑 Quản trị viên (Admin)</option>
-          </select>
-        </div>
-        <button type="submit" id="btnGateSubmitRegister" class="auth-btn-submit">Tạo Tài Khoản &amp; Vào Chơi →</button>
-      </form>
+      </div>
     </div>
   </section>
 
@@ -557,6 +642,56 @@
     </div>
   </div>
 
-  <script src="./dist/app.js"></script>
+  <!-- MODAL ADMIN TÙY CHỈNH LUẬT CHƠI (DÀNH CHO TÀI KHOẢN ADMIN) -->
+  <div id="adminModalBackdrop" class="auth-modal-backdrop" onclick="closeAdminModalOnBackdrop(event)">
+    <div class="auth-modal-box admin-modal-box">
+      <button class="modal-close-btn" onclick="closeAdminModal()" title="Đóng">✕</button>
+
+      <div class="admin-modal-header">
+        <div class="admin-icon-crown">👑</div>
+        <div>
+          <h3 style="font-size:17px; font-weight:800; color:#fbbf24;">BẢNG QUẢN TRỊ — TÙY CHỈNH LUẬT ĐẤU TRƯỜNG</h3>
+          <p style="font-size:12px; color:#94a3b8;">Cấu hình các thông số thi đấu trực tiếp tại Client không cần backend</p>
+        </div>
+      </div>
+
+      <div class="admin-form-body" style="margin-top:16px;">
+        <div class="auth-form-group">
+          <label for="adminMaxTurnsInput">Số lượt tối đa mỗi trận (Max Turns):</label>
+          <input id="adminMaxTurnsInput" class="auth-input" type="number" min="30" max="400" value="160" />
+          <span style="font-size:11px; color:#94a3b8;">Mặc định: 160 lượt. Sau số lượt này nếu chưa ai vào căn cứ sẽ tính điểm quân.</span>
+        </div>
+
+        <div class="auth-form-group">
+          <label for="adminMoveTimeoutSelect">Giới hạn thời gian mỗi nước đi:</label>
+          <select id="adminMoveTimeoutSelect" class="auth-input" style="background:#0f131a; color:#fff;">
+            <option value="50">50 ms (Tiêu chuẩn thi đấu chớp nhoáng)</option>
+            <option value="100" selected>100 ms (Mặc định)</option>
+            <option value="500">500 ms (Thử nghiệm giải thuật phức tạp)</option>
+            <option value="1000">1000 ms (Chế độ Debug chi tiết)</option>
+          </select>
+        </div>
+
+        <div class="auth-form-group">
+          <label for="adminWinConditionSelect">Điều kiện chiến thắng ưu tiên:</label>
+          <select id="adminWinConditionSelect" class="auth-input" style="background:#0f131a; color:#fff;">
+            <option value="BASE_CAPTURE" selected>Chiếm căn cứ địch (i9 / a1) hoặc triệt hạ toàn bộ</option>
+            <option value="PIECES_ONLY">Chỉ triệt hạ toàn bộ quân (Deathmatch)</option>
+          </select>
+        </div>
+
+        <div style="display:flex; gap:10px; margin-top:18px;">
+          <button type="button" class="btn-primary" style="flex:1;" onclick="saveAdminRules()">
+            💾 Áp Dụng Thay Đổi Ngay
+          </button>
+          <button type="button" class="btn-outline" onclick="closeAdminModal()">
+            Đóng
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="./dist/app.js?v=20261020-ui2"></script>
 </body>
 </html>

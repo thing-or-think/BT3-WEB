@@ -373,6 +373,7 @@ function handleRunTestMatch(): void {
         ? CLIENT_BOT_PROFILES
         : CLIENT_BOT_PROFILES.filter(b => b.level === selectedBotLevel);
 
+    const maxTurns = parseInt(localStorage.getItem('rps_admin_max_turns') || '160', 10);
     const results: MatchSummary[] = [];
 
     botsToTest.forEach(bot => {
@@ -386,7 +387,8 @@ function handleRunTestMatch(): void {
           name: bot.name,
           level: bot.level,
           side: userSide === 'RED' ? 'BLUE' : 'RED'
-        }
+        },
+        maxTurns
       });
       results.push(match);
     });
@@ -440,6 +442,7 @@ function handleSubmitGauntlet(): void {
 
   setTimeout(() => {
     try {
+      const maxTurns = parseInt(localStorage.getItem('rps_admin_max_turns') || '160', 10);
       const match = ClientMatchSimulator.simulateMatch({
         challenger: {
           name: username,
@@ -450,7 +453,8 @@ function handleSubmitGauntlet(): void {
           name: currentKing.kingName,
           jsCode: currentKing.kingBotCode,
           side: 'BLUE'
-        }
+        },
+        maxTurns
       });
 
       store.currentGauntletMatches = [match];
@@ -556,7 +560,7 @@ function renderAuthHeader(user: UserProfile | null): void {
   const container = document.getElementById('authHeaderSection');
   const gateScreen = document.getElementById('authGatewayScreen');
   const arenaContainer = document.getElementById('arenaAppContainer');
-  const topbarNav = document.querySelector('.main-nav-tabs') as HTMLElement | null;
+  const topbarNav = document.getElementById('mainNavTabs') || (document.querySelector('.main-nav-tabs') as HTMLElement | null);
 
   if (!user) {
     if (gateScreen) gateScreen.classList.remove('hidden');
@@ -565,9 +569,7 @@ function renderAuthHeader(user: UserProfile | null): void {
 
     if (container) {
       container.innerHTML = `
-        <button class="btn-primary" style="padding:7px 15px; font-size:13px;" onclick="openAuthModal('login')">
-          🔑 Đăng Nhập / Đăng Ký
-        </button>
+        <div class="topbar-guest-tag">🔒 Vui lòng đăng nhập để mở khóa</div>
       `;
     }
   } else {
@@ -579,6 +581,10 @@ function renderAuthHeader(user: UserProfile | null): void {
       ? '<span class="badge-role role-admin">👑 ADMIN</span>'
       : '<span class="badge-role role-user">👤 PLAYER</span>';
 
+    const adminBtn = user.role === 'ADMIN'
+      ? '<button class="btn-admin-config" onclick="openAdminModal()" title="Tùy chỉnh luật đấu trường">⚙️ Tùy Chỉnh Luật</button>'
+      : '';
+
     if (container) {
       container.innerHTML = `
         <div class="user-profile-badge">
@@ -587,6 +593,7 @@ function renderAuthHeader(user: UserProfile | null): void {
             <span class="user-name-title">${user.username}</span>
             <span style="font-size:11px; color:#94a3b8;">${roleBadge} • <b>${user.elo}</b> pts</span>
           </div>
+          ${adminBtn}
           <button class="btn-mini" onclick="handleLogout()" title="Đăng xuất">🚪 Thoát</button>
         </div>
       `;
@@ -597,6 +604,51 @@ function renderAuthHeader(user: UserProfile | null): void {
     const ladderPreviewUser = document.getElementById('ladderPreviewUser');
     if (ladderPreviewUser) ladderPreviewUser.textContent = user.username;
   }
+}
+
+function openAdminModal(): void {
+  const modal = document.getElementById('adminModalBackdrop');
+  if (modal) {
+    const turnsInput = document.getElementById('adminMaxTurnsInput') as HTMLInputElement | null;
+    if (turnsInput) {
+      turnsInput.value = localStorage.getItem('rps_admin_max_turns') || '160';
+    }
+    const timeoutSelect = document.getElementById('adminMoveTimeoutSelect') as HTMLSelectElement | null;
+    if (timeoutSelect) {
+      timeoutSelect.value = localStorage.getItem('rps_admin_timeout') || '100';
+    }
+    const winSelect = document.getElementById('adminWinConditionSelect') as HTMLSelectElement | null;
+    if (winSelect) {
+      winSelect.value = localStorage.getItem('rps_admin_win_condition') || 'BASE_CAPTURE';
+    }
+    modal.classList.add('open');
+  }
+}
+
+function closeAdminModal(): void {
+  const modal = document.getElementById('adminModalBackdrop');
+  if (modal) modal.classList.remove('open');
+}
+
+function closeAdminModalOnBackdrop(e: MouseEvent): void {
+  if ((e.target as HTMLElement).id === 'adminModalBackdrop') {
+    closeAdminModal();
+  }
+}
+
+function saveAdminRules(): void {
+  const turnsInput = document.getElementById('adminMaxTurnsInput') as HTMLInputElement | null;
+  const timeoutSelect = document.getElementById('adminMoveTimeoutSelect') as HTMLSelectElement | null;
+  const winSelect = document.getElementById('adminWinConditionSelect') as HTMLSelectElement | null;
+
+  const turns = turnsInput?.value ? parseInt(turnsInput.value, 10) : 160;
+  localStorage.setItem('rps_admin_max_turns', turns.toString());
+  if (timeoutSelect) localStorage.setItem('rps_admin_timeout', timeoutSelect.value);
+  if (winSelect) localStorage.setItem('rps_admin_win_condition', winSelect.value);
+
+  playhtmlAdapter.triggerConfetti();
+  alert(`✅ Đã lưu cấu hình luật chơi Admin thành công!\n• Max Turns: ${turns}\n• Timeout: ${timeoutSelect?.value || 100}ms\n• Ưu tiên: ${winSelect?.value === 'BASE_CAPTURE' ? 'Chiếm căn cứ' : 'Diệt hết quân'}`);
+  closeAdminModal();
 }
 
 function switchGateAuthTab(tab: 'login' | 'register'): void {
@@ -829,7 +881,11 @@ Object.assign(window as any, {
   switchGateAuthTab,
   handleGateLoginSubmit,
   handleGateRegisterSubmit,
-  quickLogin
+  quickLogin,
+  openAdminModal,
+  closeAdminModal,
+  closeAdminModalOnBackdrop,
+  saveAdminRules
 });
 
 function updateKingDisplayCard(): void {
