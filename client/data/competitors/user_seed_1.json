@@ -1,0 +1,16 @@
+{
+  "id": "user_seed_1",
+  "username": "MinhKiet_Top1",
+  "isBot": false,
+  "bestLanguage": "python",
+  "bestScore": 1200,
+  "elo": 1650,
+  "highestBotDefeated": 4,
+  "winsCount": 3,
+  "totalMatches": 3,
+  "bestExecTimeMs": 38,
+  "submissionsCount": 3,
+  "updatedAt": "2026-10-20T09:31:53.998Z",
+  "stoppedBy": null,
+  "botFile": "bots/MinhKiet_Top1.py"
+}

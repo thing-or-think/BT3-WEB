@@ -1,0 +1,16 @@
+{
+  "id": "user_seed_4",
+  "username": "BaoNam_Newbie",
+  "isBot": false,
+  "bestLanguage": "python",
+  "bestScore": 320,
+  "elo": 980,
+  "highestBotDefeated": 1,
+  "winsCount": 0,
+  "totalMatches": 1,
+  "bestExecTimeMs": 84,
+  "submissionsCount": 1,
+  "updatedAt": "2026-10-20T13:31:53.998Z",
+  "stoppedBy": "TuanHung_Coder",
+  "botFile": "bots/BaoNam_Newbie.py"
+}

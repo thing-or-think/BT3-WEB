@@ -18,17 +18,27 @@ export class JsonLeaderboardRepository
 {
   private readonly dataDir: string;
   private readonly dbFile: string;
+  private readonly botsDir: string;
+  private readonly competitorsDir: string;
+  private readonly submissionsDir: string;
+  private readonly indexFile: string;
 
   constructor(customDataDir?: string) {
     this.dataDir = customDataDir || path.join(process.cwd(), 'data');
     this.dbFile = path.join(this.dataDir, 'arena_db.json');
+    this.botsDir = path.join(this.dataDir, 'bots');
+    this.competitorsDir = path.join(this.dataDir, 'competitors');
+    this.submissionsDir = path.join(this.dataDir, 'submissions');
+    this.indexFile = path.join(this.dataDir, 'index.json');
     this.ensureSeedData();
   }
 
   private ensureSeedData(): void {
-    if (!fs.existsSync(this.dataDir)) {
-      fs.mkdirSync(this.dataDir, { recursive: true });
-    }
+    [this.dataDir, this.botsDir, this.competitorsDir, this.submissionsDir].forEach(dir => {
+      if (!fs.existsSync(dir)) {
+        fs.mkdirSync(dir, { recursive: true });
+      }
+    });
 
     let needSeed = !fs.existsSync(this.dbFile);
     if (!needSeed) {
@@ -43,7 +53,6 @@ export class JsonLeaderboardRepository
     }
 
     if (needSeed) {
-      // Danh sách BXH Người chơi từ Hạng #1 (trên cùng) xuống Hạng #4 (dưới cùng)
       const seed: DbSchema = {
         version: 2,
         users: [
@@ -114,7 +123,7 @@ export class JsonLeaderboardRepository
         ],
         submissions: []
       };
-      fs.writeFileSync(this.dbFile, JSON.stringify(seed, null, 2), 'utf8');
+      this.writeDb(seed);
     }
   }
 
@@ -127,10 +136,82 @@ export class JsonLeaderboardRepository
     }
   }
 
+  /**
+   * Lưu trữ phân tán: vừa cập nhật arena_db.json nguyên khối,
+   * vừa tách thành index.json + bots/<name> + competitors/<id>.json + submissions/<id>.json
+   */
   private writeDb(data: DbSchema): void {
-    this.ensureSeedData();
     data.version = 2;
     fs.writeFileSync(this.dbFile, JSON.stringify(data, null, 2), 'utf8');
+
+    const extMap: Record<string, string> = {
+      python: 'py',
+      cpp: 'cpp',
+      java: 'java',
+      javascript: 'js',
+      system: 'py'
+    };
+
+    // 1. Lưu index.json tóm tắt & các file con
+    const indexEntries = data.users.map((u, idx) => {
+      const ext = extMap[u.bestLanguage] || 'py';
+      const cleanName = u.username.replace(/[^a-zA-Z0-9_-]/g, '_');
+      const botFileName = `${cleanName}.${ext}`;
+
+      // Lưu file bot riêng biệt
+      if (u.sourceCode) {
+        fs.writeFileSync(path.join(this.botsDir, botFileName), u.sourceCode, 'utf8');
+      }
+
+      // Lưu file hồ sơ competitor riêng biệt
+      const compData: any = { ...u };
+      delete compData.sourceCode;
+      compData.botFile = `bots/${botFileName}`;
+      fs.writeFileSync(
+        path.join(this.competitorsDir, `${u.id}.json`),
+        JSON.stringify(compData, null, 2),
+        'utf8'
+      );
+
+      return {
+        rank: idx + 1,
+        id: u.id,
+        username: u.username,
+        bestLanguage: u.bestLanguage,
+        bestScore: u.bestScore,
+        elo: u.elo,
+        winsCount: u.winsCount,
+        stoppedBy: u.stoppedBy,
+        updatedAt: u.updatedAt,
+        botFile: `bots/${botFileName}`,
+        profileFile: `competitors/${u.id}.json`
+      };
+    });
+
+    fs.writeFileSync(this.indexFile, JSON.stringify(indexEntries, null, 2), 'utf8');
+
+    // 2. Lưu từng submission riêng biệt
+    if (data.submissions && data.submissions.length > 0) {
+      data.submissions.forEach(s => {
+        fs.writeFileSync(
+          path.join(this.submissionsDir, `${s.id}.json`),
+          JSON.stringify(s, null, 2),
+          'utf8'
+        );
+      });
+    }
+
+    // 3. Tự động đồng bộ sang client/data nếu thư mục client tồn tại
+    const clientDataDir = path.join(process.cwd(), 'client', 'data');
+    if (fs.existsSync(clientDataDir)) {
+      try {
+        fs.writeFileSync(
+          path.join(clientDataDir, 'index.json'),
+          JSON.stringify(indexEntries, null, 2),
+          'utf8'
+        );
+      } catch (_) {}
+    }
   }
 
   public getOrderedCompetitors(): Competitor[] {
@@ -180,9 +261,6 @@ export class JsonLeaderboardRepository
     this.writeDb(db);
   }
 
-  /**
-   * Trả về Bảng xếp hạng người chơi theo đúng vị trí từ trên xuống dưới (Rank #1 -> #N)
-   */
   public getRankedLeaderboard(): RankedLeaderboardEntryDto[] {
     const ordered = this.getOrderedCompetitors();
     return ordered.map((u, idx) => ({

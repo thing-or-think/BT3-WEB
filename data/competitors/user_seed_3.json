@@ -1,0 +1,16 @@
+{
+  "id": "user_seed_3",
+  "username": "TuanHung_Coder",
+  "isBot": false,
+  "bestLanguage": "python",
+  "bestScore": 640,
+  "elo": 1210,
+  "highestBotDefeated": 2,
+  "winsCount": 1,
+  "totalMatches": 2,
+  "bestExecTimeMs": 68,
+  "submissionsCount": 1,
+  "updatedAt": "2026-10-20T12:31:53.998Z",
+  "stoppedBy": "HoangAnh_Pro",
+  "botFile": "bots/TuanHung_Coder.py"
+}

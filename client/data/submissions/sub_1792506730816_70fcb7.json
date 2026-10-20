@@ -1,0 +1,22 @@
+{
+  "id": "sub_1792506730816_70fcb7",
+  "userId": "user_735ef47f",
+  "username": "CaoThu_CPP",
+  "language": "cpp",
+  "sourceCode": "// ============================================================\n// NGÔN NGỮ: C++ (G++ 17/20) | CỜ ĐẤM - LÁ - KÉO 9x9\n// ============================================================\n#include <iostream>\n#include <vector>\n#include <string>\n#include <cmath>\n#include <cctype>\nusing namespace std;\n\nconst int DR[4] = {-1, 1, 0, 0};\nconst int DC[4] = {0, 0, -1, 1};\n\nbool isMyPiece(char ch, const string& side) {\n    if (ch == '.') return false;\n    return side == \"RED\" ? isupper(ch) : islower(ch);\n}\n\nbool isOppPiece(char ch, const string& side) {\n    if (ch == '.') return false;\n    return !isMyPiece(ch, side);\n}\n\nbool canCapture(char a, char d) {\n    char A = toupper(a), D = toupper(d);\n    return (A == 'R' && D == 'S') || (A == 'S' && D == 'P') || (A == 'P' && D == 'R');\n}\n\nstring toCoord(int r, int c) {\n    string s = \"\";\n    s += char('a' + c);\n    s += char('0' + (9 - r));\n    return s;\n}\n\nint main() {\n    ios::sync_with_stdio(false);\n    cin.tie(nullptr);\n\n    string side;\n    int turn, timeLimit;\n    if (!(cin >> side >> turn >> timeLimit)) return 0;\n\n    char board[9][9];\n    for (int r = 0; r < 9; ++r)\n        for (int c = 0; c < 9; ++c)\n            cin >> board[r][c];\n\n    int ownBaseR = (side == \"RED\") ? 8 : 0;\n    int ownBaseC = (side == \"RED\") ? 0 : 8;\n    int targetR  = (side == \"RED\") ? 0 : 8;\n    int targetC  = (side == \"RED\") ? 8 : 0;\n\n    string bestMove = \"\";\n    int bestScore = -1e9;\n\n    for (int r = 0; r < 9; ++r) {\n        for (int c = 0; c < 9; ++c) {\n            char p = board[r][c];\n            if (!isMyPiece(p, side)) continue;\n\n            for (int d = 0; d < 4; ++d) {\n                int nr = r + DR[d], nc = c + DC[d];\n                if (nr < 0 || nr >= 9 || nc < 0 || nc >= 9) continue;\n                if (nr == ownBaseR && nc == ownBaseC) continue;\n\n                char target = board[nr][nc];\n                if (target != '.' && !(isOppPiece(target, side) && canCapture(p, target)))\n                    continue;\n\n                if (nr == targetR && nc == targetC) {\n                    cout << toCoord(r, c) << \" \" << toCoord(nr, nc) << endl;\n                    return 0;\n                }\n\n                int oldDist = abs(r - targetR) + abs(c - targetC);\n                int newDist = abs(nr - targetR) + abs(nc - targetC);\n                int score = (oldDist - newDist) * 28 + (16 - newDist) * 4;\n\n                if (target != '.') score += 120;\n\n                for (int ed = 0; ed < 4; ++ed) {\n                    int ar = nr + DR[ed], ac = nc + DC[ed];\n                    if (ar >= 0 && ar < 9 && ac >= 0 && ac < 9 && !(ar == r && ac == c)) {\n                        char nb = board[ar][ac];\n                        if (isOppPiece(nb, side)) {\n                            if (canCapture(nb, p)) score -= 110;\n                            else if (canCapture(p, nb)) score += 35;\n                        }\n                    }\n                }\n\n                if (score > bestScore) {\n                    bestScore = score;\n                    bestMove = toCoord(r, c) + \" \" + toCoord(nr, nc);\n                }\n            }\n        }\n    }\n\n    if (!bestMove.empty()) {\n        cout << bestMove << endl;\n    }\n    return 0;\n}\n",
+  "status": "COMPILE_ERROR",
+  "compileError": "Command failed: g++ -O2 -std=c++17 solution.cpp -o solution.exe\n",
+  "totalScore": 0,
+  "winsCount": 0,
+  "drawsCount": 0,
+  "lossesCount": 0,
+  "highestBotDefeated": 0,
+  "totalTurns": 0,
+  "totalExecTimeMs": 0,
+  "eloAfter": 1000,
+  "matches": [],
+  "createdAt": "2026-10-20T14:32:10.816Z",
+  "ladderMatches": [],
+  "finalRank": null,
+  "stoppedBy": null
+}
