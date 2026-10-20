@@ -554,36 +554,127 @@ function loadLeaderboard(): void {
 
 function renderAuthHeader(user: UserProfile | null): void {
   const container = document.getElementById('authHeaderSection');
-  if (!container) return;
+  const gateScreen = document.getElementById('authGatewayScreen');
+  const arenaContainer = document.getElementById('arenaAppContainer');
+  const topbarNav = document.querySelector('.main-nav-tabs') as HTMLElement | null;
 
   if (!user) {
-    container.innerHTML = `
-      <button class="btn-primary" style="padding:7px 15px; font-size:13px;" onclick="openAuthModal('login')">
-        🔑 Đăng Nhập / Đăng Ký
-      </button>
-    `;
-    const userInput = document.getElementById('usernameInput') as HTMLInputElement | null;
-    if (userInput && !userInput.value) userInput.value = 'SinhVien_BTL03';
+    if (gateScreen) gateScreen.classList.remove('hidden');
+    if (arenaContainer) arenaContainer.classList.add('hidden');
+    if (topbarNav) topbarNav.style.display = 'none';
+
+    if (container) {
+      container.innerHTML = `
+        <button class="btn-primary" style="padding:7px 15px; font-size:13px;" onclick="openAuthModal('login')">
+          🔑 Đăng Nhập / Đăng Ký
+        </button>
+      `;
+    }
   } else {
+    if (gateScreen) gateScreen.classList.add('hidden');
+    if (arenaContainer) arenaContainer.classList.remove('hidden');
+    if (topbarNav) topbarNav.style.display = 'flex';
+
     const roleBadge = user.role === 'ADMIN'
       ? '<span class="badge-role role-admin">👑 ADMIN</span>'
       : '<span class="badge-role role-user">👤 PLAYER</span>';
 
-    container.innerHTML = `
-      <div class="user-profile-badge">
-        <div class="user-avatar-circle">${user.role === 'ADMIN' ? '👑' : '👤'}</div>
-        <div class="user-info-text">
-          <span class="user-name-title">${user.username}</span>
-          <span style="font-size:11px; color:#94a3b8;">${roleBadge} • <b>${user.elo}</b> pts</span>
+    if (container) {
+      container.innerHTML = `
+        <div class="user-profile-badge">
+          <div class="user-avatar-circle">${user.role === 'ADMIN' ? '👑' : '👤'}</div>
+          <div class="user-info-text">
+            <span class="user-name-title">${user.username}</span>
+            <span style="font-size:11px; color:#94a3b8;">${roleBadge} • <b>${user.elo}</b> pts</span>
+          </div>
+          <button class="btn-mini" onclick="handleLogout()" title="Đăng xuất">🚪 Thoát</button>
         </div>
-        <button class="btn-mini" onclick="handleLogout()" title="Đăng xuất">🚪 Thoát</button>
-      </div>
-    `;
+      `;
+    }
 
     const userInput = document.getElementById('usernameInput') as HTMLInputElement | null;
     if (userInput) userInput.value = user.username;
     const ladderPreviewUser = document.getElementById('ladderPreviewUser');
     if (ladderPreviewUser) ladderPreviewUser.textContent = user.username;
+  }
+}
+
+function switchGateAuthTab(tab: 'login' | 'register'): void {
+  const isLogin = tab === 'login';
+  document.getElementById('gateTabLogin')?.classList.toggle('active', isLogin);
+  document.getElementById('gateTabRegister')?.classList.toggle('active', !isLogin);
+  document.getElementById('gateFormLogin')?.classList.toggle('hidden', !isLogin);
+  document.getElementById('gateFormRegister')?.classList.toggle('hidden', isLogin);
+  document.getElementById('gateAlertBox')?.classList.add('hidden');
+}
+
+function showGateAlert(msg: string): void {
+  const alertEl = document.getElementById('gateAlertBox');
+  if (alertEl) {
+    alertEl.textContent = msg;
+    alertEl.classList.remove('hidden');
+  }
+}
+
+async function handleGateLoginSubmit(e: Event): Promise<void> {
+  e.preventDefault();
+  const idInput = document.getElementById('gateLoginId') as HTMLInputElement | null;
+  const passInput = document.getElementById('gateLoginPass') as HTMLInputElement | null;
+  const btn = document.getElementById('btnGateSubmitLogin') as HTMLButtonElement | null;
+
+  if (!idInput || !passInput) return;
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = '⏳ Đang xác thực...';
+  }
+
+  const res = await authService.login(idInput.value, passInput.value);
+  if (btn) {
+    btn.disabled = false;
+    btn.textContent = 'Vào Đấu Trường Chơi Ngay →';
+  }
+
+  if (res.success && res.user) {
+    playhtmlAdapter.triggerConfetti();
+  } else {
+    showGateAlert(res.error || 'Đăng nhập thất bại!');
+  }
+}
+
+async function handleGateRegisterSubmit(e: Event): Promise<void> {
+  e.preventDefault();
+  const userInput = document.getElementById('gateRegUser') as HTMLInputElement | null;
+  const emailInput = document.getElementById('gateRegEmail') as HTMLInputElement | null;
+  const passInput = document.getElementById('gateRegPass') as HTMLInputElement | null;
+  const roleSelect = document.getElementById('gateRegRole') as HTMLSelectElement | null;
+  const btn = document.getElementById('btnGateSubmitRegister') as HTMLButtonElement | null;
+
+  if (!userInput || !emailInput || !passInput) return;
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = '⏳ Đang tạo tài khoản...';
+  }
+
+  const role = (roleSelect?.value === 'ADMIN' ? 'ADMIN' : 'USER') as any;
+  const res = await authService.register(userInput.value, emailInput.value, passInput.value, role);
+  if (btn) {
+    btn.disabled = false;
+    btn.textContent = 'Tạo Tài Khoản & Vào Chơi →';
+  }
+
+  if (res.success && res.user) {
+    playhtmlAdapter.triggerConfetti();
+  } else {
+    showGateAlert(res.error || 'Đăng ký thất bại!');
+  }
+}
+
+async function quickLogin(user: string, pass: string): Promise<void> {
+  const res = await authService.login(user, pass);
+  if (res.success && res.user) {
+    playhtmlAdapter.triggerConfetti();
+  } else {
+    alert(res.error || 'Đăng nhập nhanh thất bại');
   }
 }
 
@@ -734,7 +825,11 @@ Object.assign(window as any, {
   switchAuthTab,
   handleLoginSubmit,
   handleRegisterSubmit,
-  handleLogout
+  handleLogout,
+  switchGateAuthTab,
+  handleGateLoginSubmit,
+  handleGateRegisterSubmit,
+  quickLogin
 });
 
 function updateKingDisplayCard(): void {
