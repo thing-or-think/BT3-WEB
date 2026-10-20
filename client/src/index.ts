@@ -4,9 +4,12 @@ import { ArenaStore, MainTabId } from './application/arenaStore';
 import { ReplayController } from './application/replayController';
 import { UserProfile } from './domain/authTypes';
 import {
+  canCapture,
   cloneGrid,
   computeRedLegalTargets,
+  DIRS,
   getPieceSide,
+  LegalTargetHint,
   rcToCoord
 } from './domain/boardModel';
 import { chooseClientBotMove, CLIENT_BOT_PROFILES, getLegalMovesForSide } from './domain/clientBots';
@@ -25,6 +28,306 @@ const editorView = new EditorView(store);
 const leaderboardView = new LeaderboardView();
 
 let clientBotTestMatches: MatchSummary[] = [];
+let currentActiveMatch: MatchSummary | null = null;
+
+function handleCellClick(r: number, c: number): void {
+  if (store.boardMode === 'manual') {
+    handleManualCellClick(r, c);
+  }
+  inspectUnitAt(r, c);
+}
+
+function inspectUnitAt(r: number, c: number): void {
+  const piece = store.currentBoard[r][c];
+  const hud = document.getElementById('unitInspectorCard');
+  if (!hud) return;
+
+  if (!piece || piece === '.') {
+    hud.classList.add('hidden');
+    store.manualSelectedRC = null;
+    store.manualLegalTargets = [];
+    boardView.renderBoard({
+      board: store.currentBoard,
+      boardMode: store.boardMode,
+      selectedRC: null,
+      legalTargets: [],
+      onCellClick: handleCellClick
+    });
+    return;
+  }
+
+  const side = getPieceSide(piece);
+  const coord = rcToCoord(r, c);
+  const targetBase = side === 'RED' ? { r: 0, c: 8, name: 'i9' } : { r: 8, c: 0, name: 'a1' };
+  const dist = Math.abs(r - targetBase.r) + Math.abs(c - targetBase.c);
+
+  const upper = piece.toUpperCase();
+  const pieceMap: Record<string, { name: string; icon: string; beats: string; loses: string }> = {
+    R: { name: 'ĐẤM (ROCK)', icon: '✊', beats: '✌️ Kéo', loses: '✋ Lá' },
+    P: { name: 'LÁ (PAPER)', icon: '✋', beats: '✊ Đấm', loses: '✌️ Kéo' },
+    S: { name: 'KÉO (SCISSORS)', icon: '✌️', beats: '✋ Lá', loses: '✊ Đấm' }
+  };
+  const info = pieceMap[upper] || { name: 'QUÂN CỜ', icon: '♟️', beats: '?', loses: '?' };
+
+  const iconEl = document.getElementById('inspectPieceIcon');
+  const nameEl = document.getElementById('inspectPieceName');
+  const sideEl = document.getElementById('inspectPieceSide');
+  const coordEl = document.getElementById('inspectPieceCoord');
+  const targetEl = document.getElementById('inspectPieceTarget');
+  const movesEl = document.getElementById('inspectPieceMoves');
+  const matchEl = document.getElementById('inspectPieceMatchup');
+
+  if (iconEl) iconEl.textContent = info.icon;
+  if (nameEl) nameEl.textContent = info.name;
+  if (sideEl) {
+    sideEl.textContent = side === 'RED' ? 'PHE ĐỎ (RED)' : 'PHE XANH (BLUE)';
+    sideEl.className = `inspect-badge ${side === 'RED' ? 'badge-side-red' : 'badge-side-blue'}`;
+  }
+  if (coordEl) coordEl.textContent = coord;
+  if (targetEl) targetEl.textContent = `${targetBase.name} (${dist} bước)`;
+  if (matchEl) matchEl.textContent = `Thắng: ${info.beats} • Sợ: ${info.loses}`;
+
+  const targets: LegalTargetHint[] = [];
+  const ownBase = side === 'RED' ? { r: 8, c: 0 } : { r: 0, c: 8 };
+  for (const [dr, dc] of DIRS) {
+    const nr = r + dr;
+    const nc = c + dc;
+    if (nr < 0 || nr >= 9 || nc < 0 || nc >= 9) continue;
+    if (nr === ownBase.r && nc === ownBase.c) continue;
+    const targetPiece = store.currentBoard[nr][nc];
+    if (targetPiece === '.') {
+      targets.push({ r: nr, c: nc, isCapture: false });
+    } else if (canCapture(piece, targetPiece)) {
+      targets.push({ r: nr, c: nc, isCapture: true });
+    }
+  }
+
+  if (movesEl) movesEl.textContent = `${targets.length} hướng hợp lệ`;
+  hud.classList.remove('hidden');
+
+  store.manualSelectedRC = { r, c };
+  store.manualLegalTargets = targets;
+  boardView.renderBoard({
+    board: store.currentBoard,
+    boardMode: store.boardMode,
+    selectedRC: { r, c },
+    legalTargets: targets,
+    onCellClick: handleCellClick
+  });
+}
+
+function closeUnitInspector(): void {
+  const hud = document.getElementById('unitInspectorCard');
+  if (hud) hud.classList.add('hidden');
+  store.manualSelectedRC = null;
+  store.manualLegalTargets = [];
+  boardView.renderBoard({
+    board: store.currentBoard,
+    boardMode: store.boardMode,
+    selectedRC: null,
+    legalTargets: [],
+    onCellClick: handleCellClick
+  });
+}
+
+function renderTimelineMarkers(match: MatchSummary): void {
+  const track = document.getElementById('timelineMarkersTrack');
+  if (!track) return;
+  track.innerHTML = '';
+
+  const total = match.moves?.length || 0;
+  if (total === 0) return;
+
+  match.moves.forEach((m, idx) => {
+    if (m.captured) {
+      const pct = (idx / total) * 100;
+      const marker = document.createElement('div');
+      const isRed = m.side === 'RED';
+      marker.className = `timeline-event-marker ${isRed ? 'marker-red' : 'marker-blue'}`;
+      marker.style.left = `${pct}%`;
+      marker.title = `Nước ${m.turn}: ${m.side} ăn quân ${m.captured} tại ${m.to}`;
+      marker.onclick = (e) => {
+        e.stopPropagation();
+        setPlayPauseButtonState(false);
+        replayController.jumpTo(idx + 1);
+      };
+      track.appendChild(marker);
+    }
+  });
+
+  const winMarker = document.createElement('div');
+  winMarker.className = 'timeline-event-marker marker-win';
+  winMarker.style.left = '100%';
+  winMarker.title = `Kết thúc: ${match.winnerSide} chiến thắng (${match.winReason})!`;
+  winMarker.onclick = (e) => {
+    e.stopPropagation();
+    replayController.last();
+  };
+  track.appendChild(winMarker);
+}
+
+function renderMatchTelemetry(match: MatchSummary): void {
+  const container = document.getElementById('telemetryChartContainer');
+  const statsRow = document.getElementById('telemetryStatsRow');
+  if (!container || !statsRow) return;
+
+  const frames = replayController.getStates();
+  if (frames.length === 0) {
+    container.innerHTML = `<div class="telemetry-empty-hint">Chưa có dữ liệu ván đấu.</div>`;
+    return;
+  }
+
+  const turnsData: Array<{ turn: number; red: number; blue: number }> = [];
+  frames.forEach((f, idx) => {
+    let r = 0;
+    let b = 0;
+    for (let row = 0; row < 9; row++) {
+      for (let col = 0; col < 9; col++) {
+        const p = f.board[row][col];
+        if (p && p !== '.') {
+          if (getPieceSide(p) === 'RED') r++;
+          else b++;
+        }
+      }
+    }
+    turnsData.push({ turn: idx, red: r, blue: b });
+  });
+
+  const W = 580;
+  const H = 170;
+  const padL = 35;
+  const padR = 20;
+  const padT = 20;
+  const padB = 30;
+  const plotW = W - padL - padR;
+  const plotH = H - padT - padB;
+  const maxTurn = Math.max(1, turnsData.length - 1);
+  const maxPieces = 9;
+
+  const toX = (t: number) => padL + (t / maxTurn) * plotW;
+  const toY = (count: number) => padT + plotH - (count / maxPieces) * plotH;
+
+  const redPts = turnsData.map(d => `${toX(d.turn).toFixed(1)},${toY(d.red).toFixed(1)}`).join(' ');
+  const bluePts = turnsData.map(d => `${toX(d.turn).toFixed(1)},${toY(d.blue).toFixed(1)}`).join(' ');
+
+  container.innerHTML = `
+    <svg viewBox="0 0 ${W} ${H}" class="telemetry-svg" style="width:100%; height:auto;">
+      <defs>
+        <linearGradient id="redGrad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#ef4444" stop-opacity="0.3" />
+          <stop offset="100%" stop-color="#ef4444" stop-opacity="0.0" />
+        </linearGradient>
+        <linearGradient id="blueGrad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#06b6d4" stop-opacity="0.3" />
+          <stop offset="100%" stop-color="#06b6d4" stop-opacity="0.0" />
+        </linearGradient>
+      </defs>
+
+      <line x1="${padL}" y1="${toY(9)}" x2="${W - padR}" y2="${toY(9)}" stroke="#222d42" stroke-dasharray="3" />
+      <line x1="${padL}" y1="${toY(6)}" x2="${W - padR}" y2="${toY(6)}" stroke="#222d42" stroke-dasharray="3" />
+      <line x1="${padL}" y1="${toY(3)}" x2="${W - padR}" y2="${toY(3)}" stroke="#222d42" stroke-dasharray="3" />
+      <line x1="${padL}" y1="${toY(0)}" x2="${W - padR}" y2="${toY(0)}" stroke="#334155" />
+
+      <text x="${padL - 8}" y="${toY(9) + 4}" fill="#64748b" font-size="10" text-anchor="end">9</text>
+      <text x="${padL - 8}" y="${toY(6) + 4}" fill="#64748b" font-size="10" text-anchor="end">6</text>
+      <text x="${padL - 8}" y="${toY(3) + 4}" fill="#64748b" font-size="10" text-anchor="end">3</text>
+      <text x="${padL - 8}" y="${toY(0) + 4}" fill="#64748b" font-size="10" text-anchor="end">0</text>
+
+      <polyline fill="none" stroke="#ef4444" stroke-width="2.5" points="${redPts}" />
+      <polyline fill="none" stroke="#06b6d4" stroke-width="2.5" points="${bluePts}" />
+
+      <circle cx="${W - 160}" cy="12" r="4" fill="#ef4444" />
+      <text x="${W - 150}" y="15" fill="#f87171" font-size="11" font-weight="700">PHE ĐỎ (YOU)</text>
+      <circle cx="${W - 65}" cy="12" r="4" fill="#06b6d4" />
+      <text x="${W - 55}" y="15" fill="#67e8f9" font-size="11" font-weight="700">PHE XANH</text>
+    </svg>
+  `;
+
+  statsRow.innerHTML = `
+    <div class="telemetry-stat-card">
+      <span class="t-label">⏱️ Tổng số nước:</span>
+      <b class="t-val">${match.turnsCount} turns</b>
+    </div>
+    <div class="telemetry-stat-card">
+      <span class="t-label">⚡ Benchmark tính:</span>
+      <b class="t-val">${match.execTimeMs} ms (${(match.execTimeMs / Math.max(1, match.turnsCount)).toFixed(2)}ms/nước)</b>
+    </div>
+    <div class="telemetry-stat-card">
+      <span class="t-label">🏆 Kết quả:</span>
+      <b class="t-val ${match.result === 'WIN' ? 'val-win' : 'val-loss'}">${match.result} (${match.winReason})</b>
+    </div>
+    <div class="telemetry-stat-card">
+      <span class="t-label">🤖 Đối thủ:</span>
+      <b class="t-val">${match.botName}</b>
+    </div>
+  `;
+}
+
+function appendDebugLog(msg: string, type: 'info' | 'warn' | 'success' | 'system' = 'info'): void {
+  const terminal = document.getElementById('botDebugConsole');
+  if (!terminal) return;
+  const line = document.createElement('div');
+  line.className = `term-line term-${type}`;
+  line.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+  terminal.appendChild(line);
+  terminal.scrollTop = terminal.scrollHeight;
+}
+
+function clearDebugConsole(): void {
+  const terminal = document.getElementById('botDebugConsole');
+  if (terminal) {
+    terminal.innerHTML = `
+      <div class="term-line term-system">[SYSTEM] Console buffer cleared by user.</div>
+    `;
+  }
+}
+
+function logMatchToConsole(match: MatchSummary): void {
+  appendDebugLog(`[INIT] Running MIT Local Scrimmage vs ${match.botName}...`, 'system');
+  appendDebugLog(`[CONFIG] User: ${match.userName} (${match.userSide}) | Opponent: ${match.botName} | Turns: ${match.turnsCount}`, 'info');
+
+  const moves = match.moves || [];
+  const sampleMoves = moves.slice(0, 6);
+  sampleMoves.forEach(m => {
+    const act = m.actor === 'USER' ? 'USR' : 'BOT';
+    const cap = m.captured ? ` -> ĂN QUÂN [${m.captured}]` : '';
+    appendDebugLog(`[Turn ${m.turn.toString().padStart(2, '0')}] ${m.side} (${act}): ${m.piece} ${m.from} -> ${m.to}${cap}`, m.captured ? 'warn' : 'info');
+  });
+
+  if (moves.length > 6) {
+    appendDebugLog(`[STREAM] ... [${moves.length - 6} turns omitted for brevity] ...`, 'info');
+    const lastM = moves[moves.length - 1];
+    appendDebugLog(`[Turn ${lastM.turn}] Final Move: ${lastM.side} ${lastM.piece} ${lastM.from} -> ${lastM.to}`, 'info');
+  }
+
+  if (match.result === 'WIN') {
+    appendDebugLog(`[VICTORY] Match won by ${match.userName} in ${match.turnsCount} turns (${match.winReason})! Benchmark: ${match.execTimeMs}ms`, 'success');
+  } else {
+    appendDebugLog(`[DEFEAT] Match finished in ${match.result} (${match.winReason}). Benchmark: ${match.execTimeMs}ms`, 'warn');
+  }
+}
+
+function exportMatchReplayJson(): void {
+  if (!currentActiveMatch) {
+    alert('Chưa có dữ liệu ván đấu để xuất replay. Hãy chạy test đối kháng trước!');
+    return;
+  }
+  const payload = {
+    competition: 'MIT Battlecode 9x9 AI Arena',
+    version: '2.0.0-mit',
+    exportedAt: new Date().toISOString(),
+    match: currentActiveMatch,
+    framesCount: replayController.getStatesCount()
+  };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `mit_battlecode_${currentActiveMatch.userName}_vs_${currentActiveMatch.botName}_${Date.now()}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  playhtmlAdapter.triggerConfetti();
+}
 
 const replayController = new ReplayController(
   (frame: ReplayFrame, index: number, total: number) => {
@@ -34,7 +337,8 @@ const replayController = new ReplayController(
       lastMove: frame.move,
       boardMode: store.boardMode,
       selectedRC: store.manualSelectedRC,
-      legalTargets: store.manualLegalTargets
+      legalTargets: store.manualLegalTargets,
+      onCellClick: handleCellClick
     });
 
     const slider = document.getElementById('replaySlider') as HTMLInputElement | null;
@@ -141,6 +445,11 @@ function switchStudioSubTab(tabId: string): void {
 function loadMatchIntoReplay(match: MatchSummary, titleLabel = ''): void {
   replayController.stop();
   switchBoardMode('replay', false);
+
+  currentActiveMatch = match;
+  renderTimelineMarkers(match);
+  renderMatchTelemetry(match);
+  logMatchToConsole(match);
 
   const userIsRed = match.userSide === 'RED';
   const redName = document.getElementById('redPlayerName');
@@ -376,6 +685,8 @@ function handleRunTestMatch(): void {
   document.getElementById('errorAlertBox')?.classList.add('hidden');
 
   try {
+    appendDebugLog(`[LOCAL SCRIMMAGE] Khởi chạy kiểm thử giải thuật với ${selectedBotLevel === 0 ? '4 Bot Client (Lv1 -> Lv4)' : `Bot Lv${selectedBotLevel}`}...`, 'system');
+
     const botsToTest =
       selectedBotLevel === 0
         ? CLIENT_BOT_PROFILES
@@ -399,6 +710,10 @@ function handleRunTestMatch(): void {
         maxTurns
       });
       results.push(match);
+    });
+
+    results.forEach(m => {
+      appendDebugLog(`[SCRIMMAGE] ${m.result} vs ${m.botName} | ${m.turnsCount} nước | Benchmark: ${m.execTimeMs}ms`, m.result === 'WIN' ? 'success' : 'warn');
     });
 
     clientBotTestMatches = results;
@@ -466,6 +781,10 @@ function handleSubmitGauntlet(): void {
       });
 
       store.currentGauntletMatches = [match];
+      currentActiveMatch = match;
+      renderTimelineMarkers(match);
+      renderMatchTelemetry(match);
+      logMatchToConsole(match);
       const countBadge = document.getElementById('gauntletCountBadge');
       if (countBadge) countBadge.textContent = '1';
 
@@ -893,7 +1212,40 @@ Object.assign(window as any, {
   openAdminModal,
   closeAdminModal,
   closeAdminModalOnBackdrop,
-  saveAdminRules
+  saveAdminRules,
+  closeUnitInspector,
+  clearDebugConsole,
+  exportMatchReplayJson
+});
+
+window.addEventListener('keydown', (e: KeyboardEvent) => {
+  const target = e.target as HTMLElement;
+  if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT')) {
+    return;
+  }
+
+  if (e.code === 'Space') {
+    e.preventDefault();
+    toggleReplayPlay();
+  } else if (e.code === 'ArrowLeft') {
+    e.preventDefault();
+    setPlayPauseButtonState(false);
+    replayController.prev();
+  } else if (e.code === 'ArrowRight') {
+    e.preventDefault();
+    setPlayPauseButtonState(false);
+    replayController.next();
+  } else if (e.code === 'Home') {
+    e.preventDefault();
+    setPlayPauseButtonState(false);
+    replayController.first();
+  } else if (e.code === 'End') {
+    e.preventDefault();
+    setPlayPauseButtonState(false);
+    replayController.last();
+  } else if (e.code === 'Escape') {
+    closeUnitInspector();
+  }
 });
 
 function updateKingDisplayCard(): void {

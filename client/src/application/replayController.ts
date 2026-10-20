@@ -41,6 +41,14 @@ export class ReplayController {
     return this.states.length;
   }
 
+  public getStates(): ReplayFrame[] {
+    return this.states;
+  }
+
+  public getCurrentFrame(): ReplayFrame | null {
+    return this.states[this.index] || null;
+  }
+
   public getCurrentIndex(): number {
     return this.index;
   }

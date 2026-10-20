@@ -91,17 +91,15 @@ export class BoardView {
           cell.classList.add('last-to');
         }
 
-        if (params.boardMode === 'manual') {
-          if (params.selectedRC && params.selectedRC.r === r && params.selectedRC.c === c) {
-            cell.classList.add('selected-cell');
-          }
-          const targetHint = params.legalTargets.find(t => t.r === r && t.c === c);
-          if (targetHint) {
-            cell.classList.add(targetHint.isCapture ? 'legal-move-capture' : 'legal-move-empty');
-          }
-          if (params.onCellClick) {
-            cell.onclick = () => params.onCellClick!(r, c);
-          }
+        if (params.selectedRC && params.selectedRC.r === r && params.selectedRC.c === c) {
+          cell.classList.add('selected-cell');
+        }
+        const targetHint = params.legalTargets.find(t => t.r === r && t.c === c);
+        if (targetHint) {
+          cell.classList.add(targetHint.isCapture ? 'legal-move-capture' : 'legal-move-empty');
+        }
+        if (params.onCellClick) {
+          cell.onclick = () => params.onCellClick!(r, c);
         }
 
         const piece = params.board[r][c];

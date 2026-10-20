@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>RPS Chess 9x9 AI Arena — Serverless CTF &amp; Realtime playhtml</title>
-  <link rel="stylesheet" href="./styles/main.css?v=20261020-ui3" />
+  <title>MIT Battlecode 9x9 AI Arena — Autonomous Bot Tournament</title>
+  <link rel="stylesheet" href="./styles/main.css?v=20261020-mit1" />
   <link rel="stylesheet" href="https://unpkg.com/playhtml@latest/dist/style.css" />
   <script src="https://cdn.jsdelivr.net/npm/lz-string@1.5.0/libs/lz-string.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
@@ -14,29 +14,29 @@
   <!-- HEADER & THANH ĐIỀU HƯỚNG 4 TAB CHÍNH -->
   <header class="topbar">
     <div class="brand">
-      <div class="brand-logo">✊✋✌️</div>
+      <div class="brand-logo">🏛️</div>
       <div class="brand-text">
         <div class="brand-title-row">
-          <h1>RPS CHESS 9x9</h1>
-          <span class="brand-tag">CTF AI ARENA</span>
+          <h1>MIT BATTLECODE 9x9</h1>
+          <span class="brand-tag">AI ARENA 2026</span>
         </div>
-        <p>Đấu trường 100% Client-Side trên GitHub Pages | Realtime playhtml</p>
+        <p>IAP Autonomous Bot Tournament • 100% Client-Side Engine</p>
       </div>
     </div>
 
     <!-- 4 TABS CHÍNH - ẨN MẶC ĐỊNH CHO ĐẾN KHI ĐĂNG NHẬP -->
     <nav id="mainNavTabs" class="main-nav-tabs" style="display: none;">
       <button class="main-tab-btn" data-maintab="practice" onclick="switchMainTab('practice')">
-        <span class="tab-step">1</span> 🎮 Đấu Tập Tay &amp; Luật
+        <span class="tab-step">1</span> 🎮 Sandbox Practice
       </button>
       <button class="main-tab-btn active" data-maintab="studio" onclick="switchMainTab('studio')">
-        <span class="tab-step">2</span> 💻 Phòng Lab Code &amp; Test Bot
+        <span class="tab-step">2</span> 💻 Bot Studio &amp; Console
       </button>
       <button class="main-tab-btn" data-maintab="ladder" onclick="switchMainTab('ladder')">
-        <span class="tab-step">3</span> ⚔️ Đấu Trường Cướp Cờ CTF
+        <span class="tab-step">3</span> ⚔️ Scrimmage &amp; Hill CTF
       </button>
       <button class="main-tab-btn" data-maintab="leaderboard" onclick="switchMainTab('leaderboard')">
-        <span class="tab-step">4</span> 🏆 Bảng Vàng &amp; Lịch Sử
+        <span class="tab-step">4</span> 🏆 Tournament Bracket
       </button>
     </nav>
 
@@ -240,27 +240,77 @@
         <div id="redStats" class="player-metrics">Quân còn: 9</div>
       </div>
 
+      <!-- MIT BATTLECODE UNIT INSPECTOR HUD -->
+      <div id="unitInspectorCard" class="unit-inspector-card hidden">
+        <div class="inspector-header">
+          <div class="inspector-title-row">
+            <span id="inspectPieceIcon" class="inspect-icon">✊</span>
+            <div>
+              <strong id="inspectPieceName">ĐẤM (ROCK)</strong>
+              <span id="inspectPieceSide" class="inspect-badge badge-side-red">PHE ĐỎ</span>
+            </div>
+          </div>
+          <button class="inspector-close-btn" onclick="closeUnitInspector()" title="Đóng HUD (Esc)">✕</button>
+        </div>
+        <div class="inspector-grid">
+          <div class="inspect-metric">
+            <span class="metric-label">Tọa độ:</span>
+            <b id="inspectPieceCoord" class="metric-value">e4</b>
+          </div>
+          <div class="inspect-metric">
+            <span class="metric-label">Căn cứ địch:</span>
+            <b id="inspectPieceTarget" class="metric-value">i9 (5 bước)</b>
+          </div>
+          <div class="inspect-metric">
+            <span class="metric-label">Nước đi hợp lệ:</span>
+            <b id="inspectPieceMoves" class="metric-value">3 hướng</b>
+          </div>
+          <div class="inspect-metric">
+            <span class="metric-label">Khắc chế:</span>
+            <span id="inspectPieceMatchup" class="metric-value">Ăn ✌️ Kéo | Sợ ✋ Lá</span>
+          </div>
+        </div>
+      </div>
+
       <!-- Điều khiển Replay (Hiện ở Tab 2 & Tab 3) -->
       <div id="replayControls" class="replay-controls">
-        <div class="replay-buttons">
-          <button class="ctrl-btn" onclick="replayFirst()" title="Về đầu">⏮</button>
-          <button class="ctrl-btn" onclick="replayPrev()" title="Lùi 1 nước">◀</button>
-          <button id="btnPlayPause" class="ctrl-btn primary-ctrl" onclick="toggleReplayPlay()">▶ Phát</button>
-          <button class="ctrl-btn" onclick="replayNext()" title="Tiến 1 nước">▶|</button>
-          <button class="ctrl-btn" onclick="replayLast()" title="Tới cuối">⏭</button>
+        <div class="timeline-container">
+          <div class="timeline-header-info">
+            <span class="timeline-title">⏱️ REPLAY TIMELINE (MIT SCRUBBER)</span>
+            <span id="replayStepText" class="replay-step-pill">0 / 0 nước</span>
+          </div>
+          <div class="timeline-track-wrap">
+            <div id="timelineMarkersTrack" class="timeline-markers-track"></div>
+            <input id="replaySlider" class="timeline-slider" type="range" min="0" max="0" value="0" oninput="onSliderChange(this.value)" />
+          </div>
         </div>
-        <div class="replay-progress">
-          <input id="replaySlider" type="range" min="0" max="0" value="0" oninput="onSliderChange(this.value)" />
-          <span id="replayStepText">0 / 0</span>
+
+        <div class="replay-actions-deck">
+          <div class="replay-buttons">
+            <button class="ctrl-btn" onclick="replayFirst()" title="Về đầu (Home)">⏮</button>
+            <button class="ctrl-btn" onclick="replayPrev()" title="Lùi 1 nước (←)">◀</button>
+            <button id="btnPlayPause" class="ctrl-btn primary-ctrl" onclick="toggleReplayPlay()">▶ Phát (Space)</button>
+            <button class="ctrl-btn" onclick="replayNext()" title="Tiến 1 nước (→)">▶|</button>
+            <button class="ctrl-btn" onclick="replayLast()" title="Tới cuối (End)">⏭</button>
+          </div>
+
+          <div class="replay-speed">
+            <label>Tốc độ:</label>
+            <select id="replaySpeedSelect" onchange="updateReplaySpeed(this.value)">
+              <option value="700">0.5x</option>
+              <option value="380" selected>1x</option>
+              <option value="180">2x</option>
+              <option value="80">4x</option>
+            </select>
+          </div>
+
+          <button class="btn-export-replay" onclick="exportMatchReplayJson()" title="Tải file log JSON chuẩn MIT để phân tích ngoại tuyến">
+            📥 Xuất JSON Replay
+          </button>
         </div>
-        <div class="replay-speed">
-          <label>Tốc độ:</label>
-          <select id="replaySpeedSelect" onchange="updateReplaySpeed(this.value)">
-            <option value="700">0.5x</option>
-            <option value="380" selected>1x</option>
-            <option value="180">2x</option>
-            <option value="80">4x</option>
-          </select>
+
+        <div class="keyboard-shortcuts-pill">
+          <span>⌨️ <b>Phím tắt:</b> [Space: Phát/Dừng] • [← / →: Từng nước] • [Home/End: Đầu/Cuối] • [Click quân cờ: Soi HUD]</span>
         </div>
       </div>
 
@@ -444,20 +494,61 @@
         <div class="panel">
           <div class="sub-tabs">
             <button class="sub-tab active" data-tab="botTestTab" onclick="switchStudioSubTab('botTestTab')">
-              🧪 Kết Quả Test Với 4 Bot Client (<span id="botTestCountBadge">0</span>)
+              🧪 Local Scrimmage (<span id="botTestCountBadge">0</span>)
+            </button>
+            <button class="sub-tab" data-tab="telemetryTab" onclick="switchStudioSubTab('telemetryTab')">
+              📊 Match Telemetry
+            </button>
+            <button class="sub-tab" data-tab="consoleTab" onclick="switchStudioSubTab('consoleTab')">
+              📟 Bot Debug Console (stdout)
             </button>
             <button class="sub-tab" data-tab="protocolTab" onclick="switchStudioSubTab('protocolTab')">
-              📘 Đặc Tả Thuật Toán &amp; Hàm chooseMove()
+              📘 API chooseMove()
             </button>
           </div>
 
+          <!-- TAB 1: KẾT QUẢ ĐỐI KHÁNG 4 BOT -->
           <div id="botTestTab" class="tab-content active">
             <div id="botTestSummaryBanner" class="gauntlet-banner">
-              Hãy bấm <b>"🧪 Chạy Test Với 4 Bot (Client 0.05s)"</b> để kiểm tra thuật toán của bạn trước khi Thách Đấu Cướp Cờ!
+              Bấm <b>"▶ Chạy Test 4 Bot (0.05s)"</b> để chạy Local Scrimmage đối kháng với 4 Bot AI chuẩn MIT!
             </div>
             <div id="botTestMatchesGrid" class="gauntlet-grid"></div>
           </div>
 
+          <!-- TAB 2: MIT MATCH TELEMETRY (ĐỒ THỊ TƯƠNG QUAN LỰC LƯỢNG) -->
+          <div id="telemetryTab" class="tab-content">
+            <div class="telemetry-panel-wrap">
+              <div class="telemetry-header">
+                <h4>📊 ĐỒ THỊ TƯƠNG QUAN LỰC LƯỢNG (RED VS BLUE FORCE OVER TURNS)</h4>
+                <p>Theo dõi trực quan sự thay đổi quân số và bước ngoặt trận đấu theo từng nước đi</p>
+              </div>
+              <div id="telemetryChartContainer" class="telemetry-chart-container">
+                <div class="telemetry-empty-hint">Chưa có trận đấu nào trong bộ nhớ. Hãy chạy Test để vẽ biểu đồ tương quan lực lượng!</div>
+              </div>
+              <div class="telemetry-stats-row" id="telemetryStatsRow"></div>
+            </div>
+          </div>
+
+          <!-- TAB 3: MIT BOT DEBUG CONSOLE LOG (STDOUT STREAM) -->
+          <div id="consoleTab" class="tab-content">
+            <div class="terminal-window">
+              <div class="terminal-bar">
+                <div class="terminal-dots">
+                  <span class="dot dot-red"></span>
+                  <span class="dot dot-yellow"></span>
+                  <span class="dot dot-green"></span>
+                </div>
+                <div class="terminal-title">bash - bot-engine-stdout [session: live-iap-2026]</div>
+                <button class="btn-clear-term" onclick="clearDebugConsole()">Xóa Log</button>
+              </div>
+              <div id="botDebugConsole" class="terminal-body">
+                <div class="term-line term-system">[SYSTEM] MIT Autonomous Battle Terminal initialized.</div>
+                <div class="term-line term-info">[INFO] Bot engine ready. Awaiting match execution...</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- TAB 4: ĐẶC TẢ API -->
           <div id="protocolTab" class="tab-content">
             <div class="protocol-doc">
               <h4>1. Quy ước hàm <code>chooseMove(board, side, legalMoves)</code>:</h4>
