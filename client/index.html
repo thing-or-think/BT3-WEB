@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>RPS Chess 9x9 AI Arena — Serverless CTF &amp; Realtime playhtml</title>
-  <link rel="stylesheet" href="./styles/main.css?v=20261020-ui2" />
+  <link rel="stylesheet" href="./styles/main.css?v=20261020-ui3" />
   <link rel="stylesheet" href="https://unpkg.com/playhtml@latest/dist/style.css" />
   <script src="https://cdn.jsdelivr.net/npm/lz-string@1.5.0/libs/lz-string.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
@@ -373,15 +373,10 @@
       <!-- Cột Trái: IDE Soạn thảo Code rộng rãi -->
       <div class="workspace-column">
         <div class="panel editor-panel">
-          <div class="editor-top-row">
-            <div class="user-input-group">
-              <label for="usernameInput">👤 Tên người chơi:</label>
-              <input id="usernameInput" type="text" value="SinhVien_BTL03" placeholder="Nhập tên của bạn..." maxlength="28" />
-            </div>
-
-            <div class="lang-tabs">
+          <div class="editor-header-bar">
+            <div class="editor-lang-tabs">
               <button class="lang-tab active" data-lang="javascript" onclick="selectLanguage('javascript')">
-                ⚡ JavaScript (Realtime 60fps)
+                ⚡ JavaScript
               </button>
               <button class="lang-tab" data-lang="python" onclick="selectLanguage('python')">
                 🐍 Python 3
@@ -394,36 +389,54 @@
               </button>
             </div>
 
-            <button class="btn-outline" onclick="resetTemplateForCurrentLang()" title="Khôi phục code mẫu">
-              ↺ Khôi phục Code mẫu
-            </button>
+            <div class="editor-file-status">
+              <span class="file-name-indicator">📄 bot_algorithm</span>
+              <span class="editor-status-dot">● Sẵn sàng</span>
+            </div>
+
+            <div class="editor-top-tools">
+              <input id="usernameInput" type="hidden" value="SinhVien_BTL03" />
+              <button class="btn-restore-template" onclick="resetTemplateForCurrentLang()" title="Khôi phục code mẫu chuẩn">
+                ↺ Khôi Phục Mẫu
+              </button>
+            </div>
           </div>
 
           <div class="code-editor-container">
             <textarea id="codeEditor" class="studio-textarea" spellcheck="false"></textarea>
           </div>
 
-          <div class="editor-actions-bar">
-            <div class="test-match-controls">
-              <select id="testBotSelect">
-                <option value="0" selected>Tất cả 4 Bot Client (Lv1 → Lv4)</option>
-                <option value="1">Client Bot Lv1: Tập Sự (Elo 800)</option>
-                <option value="2">Client Bot Lv2: Trinh Sát (Elo 1100)</option>
-                <option value="3">Client Bot Lv3: Chiến Thuật (Elo 1450)</option>
-                <option value="4">Client Bot Lv4: Đại Sư (Elo 1800)</option>
-              </select>
-              <select id="testSideSelect">
-                <option value="RED">Cầm Phe Đỏ (Đi trước)</option>
-                <option value="BLUE">Cầm Phe Xanh (Đi sau)</option>
-              </select>
-              <button id="btnTestMatch" class="btn-secondary" onclick="handleRunTestMatch()">
-                🧪 Chạy Test Với 4 Bot (Client 0.05s)
+          <div class="editor-actions-deck">
+            <div class="action-deck-left">
+              <div class="deck-select-wrap">
+                <span class="deck-icon">🤖</span>
+                <select id="testBotSelect" class="deck-select">
+                  <option value="0" selected>Thử cả 4 Bot (Lv1 → Lv4)</option>
+                  <option value="1">Bot Lv1: Tập Sự (Elo 800)</option>
+                  <option value="2">Bot Lv2: Trinh Sát (Elo 1100)</option>
+                  <option value="3">Bot Lv3: Chiến Thuật (Elo 1450)</option>
+                  <option value="4">Bot Lv4: Đại Sư (Elo 1800)</option>
+                </select>
+              </div>
+
+              <div class="deck-select-wrap">
+                <span class="deck-icon">🚩</span>
+                <select id="testSideSelect" class="deck-select">
+                  <option value="RED" selected>Phe Đỏ (Đi trước)</option>
+                  <option value="BLUE">Phe Xanh (Đi sau)</option>
+                </select>
+              </div>
+
+              <button id="btnTestMatch" class="btn-run-sim" onclick="handleRunTestMatch()">
+                ▶ Chạy Test 4 Bot (0.05s)
               </button>
             </div>
 
-            <button class="btn-primary" onclick="switchMainTab('ladder')">
-              ⚔️ Sang Đấu Trường Cướp Cờ CTF (Tab 3) →
-            </button>
+            <div class="action-deck-right">
+              <button class="btn-to-ctf" onclick="switchMainTab('ladder')">
+                ⚔️ Vào Đấu Cướp Cờ (Tab 3) →
+              </button>
+            </div>
           </div>
         </div>
 
@@ -692,6 +705,6 @@
     </div>
   </div>
 
-  <script src="./dist/app.js?v=20261020-ui2"></script>
+  <script src="./dist/app.js?v=20261020-ui3"></script>
 </body>
 </html>

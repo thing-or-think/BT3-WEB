@@ -202,6 +202,14 @@ function switchBoardMode(mode: 'replay' | 'manual', resetIfNeeded = true): void 
         selectedRC: null,
         legalTargets: []
       });
+      const summary = document.getElementById('matchSummaryTag');
+      if (summary) summary.textContent = '🎬 Sẵn sàng phát Replay (Bấm Chạy Test để xem)';
+      const redName = document.getElementById('redPlayerName');
+      const blueName = document.getElementById('bluePlayerName');
+      if (redName) redName.textContent = '👤 BẠN (PHE ĐỎ - Đi trước)';
+      if (blueName) blueName.textContent = '🤖 BOT ĐỐI THỦ (PHE XANH)';
+      const badge = document.getElementById('turnStatusBadge');
+      if (badge) badge.textContent = 'Lượt 0 • Sẵn sàng';
     }
   }
 }
