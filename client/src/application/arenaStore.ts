@@ -1,4 +1,5 @@
 import { cloneGrid } from '../domain/boardModel';
+import { STARTER_TEMPLATES } from '../domain/starterTemplates';
 import {
   CellChar,
   LegalTargetHint,
@@ -12,29 +13,44 @@ export type MainTabId = 'practice' | 'studio' | 'ladder' | 'leaderboard';
 
 export class ArenaStore {
   public activeMainTab: MainTabId = 'studio';
-  public initialBoardTemplate: CellChar[][] = [];
-  public templatesByLang: Record<SupportedLanguage, string> = {
-    python: '',
-    cpp: '',
-    java: ''
-  };
-  public userDraftByLang: Record<SupportedLanguage, string> = {
-    python: '',
-    cpp: '',
-    java: ''
-  };
-  public currentLang: SupportedLanguage = 'python';
-  public boardMode: 'replay' | 'manual' = 'replay';
-  public currentBoard: CellChar[][] = [];
+  public initialBoardTemplate: CellChar[][] = [
+    ['.', 'r', '.', 'p', '.', 's', '.', 'r', '.'],
+    ['p', '.', 's', '.', 'r', '.', 'p', '.', 's'],
+    ['.', '.', '.', '.', '.', '.', '.', '.', '.'],
+    ['.', '.', '.', '.', '.', '.', '.', '.', '.'],
+    ['.', '.', '.', '.', '.', '.', '.', '.', '.'],
+    ['.', '.', '.', '.', '.', '.', '.', '.', '.'],
+    ['.', '.', '.', '.', '.', '.', '.', '.', '.'],
+    ['S', '.', 'P', '.', 'R', '.', 'S', '.', 'P'],
+    ['.', 'R', '.', 'S', '.', 'P', '.', 'R', '.']
+  ];
 
-  // Manual play state
+  public templatesByLang: Record<SupportedLanguage, string> = {
+    javascript: STARTER_TEMPLATES.javascript,
+    python: STARTER_TEMPLATES.python,
+    cpp: STARTER_TEMPLATES.cpp,
+    java: STARTER_TEMPLATES.java
+  };
+
+  public userDraftByLang: Record<SupportedLanguage, string> = {
+    javascript: STARTER_TEMPLATES.javascript,
+    python: STARTER_TEMPLATES.python,
+    cpp: STARTER_TEMPLATES.cpp,
+    java: STARTER_TEMPLATES.java
+  };
+
+  public currentLang: SupportedLanguage = 'javascript';
+  public boardMode: 'replay' | 'manual' = 'replay';
+  public currentBoard: CellChar[][] = cloneGrid(this.initialBoardTemplate);
+
+  // Manual play state (Tab 1)
   public manualSelectedRC: { r: number; c: number } | null = null;
   public manualLegalTargets: LegalTargetHint[] = [];
   public manualTurnSide: Side = 'RED';
   public manualGameOver = false;
   public manualMoveHistory: MoveRecord[] = [];
 
-  // Gauntlet / Ladder matches
+  // Match list
   public currentGauntletMatches: MatchSummary[] = [];
 
   public resetManualState(): void {

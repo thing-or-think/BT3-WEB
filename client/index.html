@@ -3,8 +3,12 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>RPS Chess 9x9 AI Arena - Hệ Thống Đa Tab (Client 4-Bot &amp; Server Ladder)</title>
-  <link rel="stylesheet" href="/styles/main.css" />
+  <title>RPS Chess 9x9 AI Arena — Serverless CTF &amp; Realtime playhtml</title>
+  <link rel="stylesheet" href="./styles/main.css" />
+  <link rel="stylesheet" href="https://unpkg.com/playhtml@latest/dist/style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/lz-string@1.5.0/libs/lz-string.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+  <script type="module" src="https://unpkg.com/playhtml@latest/dist/playhtml.es.js"></script>
 </head>
 <body>
   <!-- HEADER & THANH ĐIỀU HƯỚNG 4 TAB CHÍNH -->
@@ -12,8 +16,8 @@
     <div class="brand">
       <div class="brand-logo">✊✋✌️</div>
       <div>
-        <h1>RPS CHESS 9x9 — AI BOT ARENA</h1>
-        <p>Đấu trường Code Python • C++ • Java | Test 4 Bot tại Client &amp; Đấu Leo Tháp BXH trên Server</p>
+        <h1>RPS CHESS 9x9 — CTF AI ARENA</h1>
+        <p>Đấu trường 100% Client-Side trên GitHub Pages | Realtime playhtml &amp; CTF Cướp Cờ</p>
       </div>
     </div>
 
@@ -25,10 +29,10 @@
         <span class="tab-step">2</span> 💻 Phòng Lab Code &amp; Test 4 Bot
       </button>
       <button class="main-tab-btn" data-maintab="ladder" onclick="switchMainTab('ladder')">
-        <span class="tab-step">3</span> 🧗 Đấu Trường Leo Tháp Server
+        <span class="tab-step">3</span> ⚔️ Đấu Trường Cướp Cờ CTF
       </button>
       <button class="main-tab-btn" data-maintab="leaderboard" onclick="switchMainTab('leaderboard')">
-        <span class="tab-step">4</span> 🏆 Bảng Xếp Hạng Server
+        <span class="tab-step">4</span> 🏆 Bảng Vàng &amp; Lịch Sử Cướp Cờ
       </button>
     </nav>
   </header>
@@ -98,33 +102,29 @@
         <div class="manual-row">
           <span>Bạn cầm <b>Phe Đỏ (Đi trước)</b>. Click quân Đỏ rồi chọn ô đích (xanh/vàng).</span>
           <div class="manual-actions">
+            <label for="manualBotLevel">Đối thủ:</label>
             <select id="manualBotLevel" onchange="resetManualGame()">
-              <option value="1">Client Bot Lv1 - Tập Sự</option>
-              <option value="2" selected>Client Bot Lv2 - Trinh Sát</option>
-              <option value="3">Client Bot Lv3 - Chiến Thuật</option>
-              <option value="4">Client Bot Lv4 - Đại Sư</option>
+              <option value="1">Bot Lv1: Tập Sự</option>
+              <option value="2" selected>Bot Lv2: Trinh Sát</option>
+              <option value="3">Bot Lv3: Chiến Thuật</option>
+              <option value="4">Bot Lv4: Đại Sư</option>
             </select>
-            <button class="ctrl-btn primary-ctrl" onclick="resetManualGame()">🔄 Ván mới</button>
+            <button class="btn-mini" onclick="resetManualGame()">↺ Ván Mới</button>
           </div>
         </div>
       </div>
-    </div>
 
-    <!-- Nhật ký nước đi -->
-    <div class="panel move-log-panel">
-      <div class="panel-title-row">
-        <h3>📜 Nhật Ký Nước Đi &amp; Trạng Thái</h3>
-        <span id="matchSummaryTag" class="summary-tag">Chưa có trận đấu</span>
-      </div>
-      <div id="errorAlertBox" class="error-box hidden"></div>
-      <div id="moveHistoryList" class="move-history-list">
-        <div class="empty-hint">Chọn nước đi hoặc chạy trận đấu để xem chi tiết từng lượt.</div>
+      <!-- Thông tin tóm tắt & Lịch sử nước đi -->
+      <div class="board-footer-info">
+        <div id="matchSummaryTag" class="match-summary-tag">Trận đấu thử nghiệm</div>
+        <div id="errorAlertBox" class="alert-box-error hidden"></div>
+        <div class="move-chips-container" id="moveChipsContainer"></div>
       </div>
     </div>
   </div>
 
   <!-- ======================================================================= -->
-  <!-- TAB 1: 🎮 ĐẤU TẬP TAY & LUẬT CHƠI (PRACTICE ARENA)                      -->
+  <!-- TAB 1: 🎮 ĐẤU TẬP TAY & LUẬT CHƠI (PRACTICE)                             -->
   <!-- ======================================================================= -->
   <main id="viewPractice" class="main-tab-view">
     <div class="two-col-layout">
@@ -213,7 +213,10 @@
             </div>
 
             <div class="lang-tabs">
-              <button class="lang-tab active" data-lang="python" onclick="selectLanguage('python')">
+              <button class="lang-tab active" data-lang="javascript" onclick="selectLanguage('javascript')">
+                ⚡ JavaScript (Realtime 60fps)
+              </button>
+              <button class="lang-tab" data-lang="python" onclick="selectLanguage('python')">
                 🐍 Python 3
               </button>
               <button class="lang-tab" data-lang="cpp" onclick="selectLanguage('cpp')">
@@ -247,12 +250,12 @@
                 <option value="BLUE">Cầm Phe Xanh (Đi sau)</option>
               </select>
               <button id="btnTestMatch" class="btn-secondary" onclick="handleRunTestMatch()">
-                🧪 Chạy Test Với 4 Bot (Client)
+                🧪 Chạy Test Với 4 Bot (Client 0.05s)
               </button>
             </div>
 
             <button class="btn-primary" onclick="switchMainTab('ladder')">
-              🧗 Sang Đấu Trường Leo Tháp Server (Tab 3) →
+              ⚔️ Sang Đấu Trường Cướp Cờ CTF (Tab 3) →
             </button>
           </div>
         </div>
@@ -264,36 +267,35 @@
               🧪 Kết Quả Test Với 4 Bot Client (<span id="botTestCountBadge">0</span>)
             </button>
             <button class="sub-tab" data-tab="protocolTab" onclick="switchStudioSubTab('protocolTab')">
-              📘 Đặc Tả Giao Thức I/O (stdin / stdout)
+              📘 Đặc Tả Thuật Toán &amp; Hàm chooseMove()
             </button>
           </div>
 
           <div id="botTestTab" class="tab-content active">
             <div id="botTestSummaryBanner" class="gauntlet-banner">
-              Hãy bấm <b>"🧪 Chạy Test Với 4 Bot (Client)"</b> để kiểm tra code của bạn đấu với 4 cấp độ Bot trước khi Push lên Server!
+              Hãy bấm <b>"🧪 Chạy Test Với 4 Bot (Client 0.05s)"</b> để kiểm tra thuật toán của bạn trước khi Thách Đấu Cướp Cờ!
             </div>
             <div id="botTestMatchesGrid" class="gauntlet-grid"></div>
           </div>
 
           <div id="protocolTab" class="tab-content">
             <div class="protocol-doc">
-              <h4>1. Dữ liệu đầu vào (<code>stdin</code>) ở mỗi lượt đi (10 dòng):</h4>
-              <pre>RED 1 1000
-. r . p . s . r .
-p . s . r . p . s
-. . . . . . . . .
-. . . . . . . . .
-. . . . . . . . .
-. . . . . . . . .
-. . . . . . . . .
-S . P . R . S . P
-. R . S . P . R .</pre>
+              <h4>1. Quy ước hàm <code>chooseMove(board, side, legalMoves)</code>:</h4>
+              <p>Mỗi lượt đi, hàm của bạn nhận vào ma trận bàn cờ 9x9, phe đang cầm (<code>'RED'</code> hoặc <code>'BLUE'</code>) và danh sách tất cả nước đi hợp lệ:</p>
+              <pre>function chooseMove(board, side, legalMoves) {
+    // 1. Nếu có nước đi trực tiếp vào căn cứ đối phương -> đi ngay để thắng!
+    const targetBase = side === 'RED' ? 'i9' : 'a1';
+    const winMove = legalMoves.find(m => m.to === targetBase);
+    if (winMove) return winMove.from + ' ' + winMove.to;
+
+    // 2. Trả về chuỗi: "ô_đi ô_đích", ví dụ: "e2 e3"
+    return legalMoves[0].from + ' ' + legalMoves[0].to;
+}</pre>
+              <h4>2. Mục tiêu chiến thắng:</h4>
               <ul>
-                <li><b>Dòng 1:</b> <code>&lt;SIDE&gt; &lt;TURN&gt; &lt;TIME_LIMIT_MS&gt;</code> (<code>RED</code> cầm quân in hoa <code>R, P, S</code> mục tiêu <code>i9</code>; <code>BLUE</code> cầm quân chữ thường <code>r, p, s</code> mục tiêu <code>a1</code>).</li>
-                <li><b>9 dòng tiếp theo:</b> Ma trận bàn cờ 9x9 từ hàng <code>9</code> xuống hàng <code>1</code>.</li>
+                <li>Phe Đỏ xuất phát ở dưới (hàng 7-8), mục tiêu chiếm căn cứ <b><code>i9</code></b>.</li>
+                <li>Phe Xanh xuất phát ở trên (hàng 0-1), mục tiêu chiếm căn cứ <b><code>a1</code></b>.</li>
               </ul>
-              <h4>2. Dữ liệu đầu ra (<code>stdout</code>):</h4>
-              <p>In ra 1 dòng gồm ô xuất phát và ô đích cách nhau bởi dấu cách. Ví dụ: <code>e2 e3</code></p>
             </div>
           </div>
         </div>
@@ -305,52 +307,74 @@ S . P . R . S . P
   </main>
 
   <!-- ======================================================================= -->
-  <!-- TAB 3: 🧗 ĐẤU TRƯỜNG LEO THÁP SERVER (BOTTOM-UP PVP LADDER)             -->
+  <!-- TAB 3: ⚔️ ĐẤU TRƯỜNG CƯỚP CỜ CTF (REALTIME KING OF THE HILL)            -->
   <!-- ======================================================================= -->
   <main id="viewLadder" class="main-tab-view">
     <div class="two-col-layout">
-      <!-- Cột Trái: Điều khiển Push Code & Sơ đồ Tháp Leo Hạng Từ Dưới Lên -->
+      <!-- Cột Trái: Card Vua Giữ Cờ & Nút Thách Đấu -->
       <div class="workspace-column">
-        <div class="panel ladder-hero-panel">
+        <div id="flagHolderCard" class="panel ladder-hero-panel" can-play>
           <div class="ladder-hero-info">
-            <h2>🧗 Đấu Trường Leo Tháp Server (Đấu Từ Dưới Lên)</h2>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+              <h2>⚔️ Đấu Trường Cướp Cờ CTF (King of the Hill)</h2>
+              <span class="badge-tier tier-gold" style="font-size:12px;">🟢 Realtime playhtml</span>
+            </div>
             <p>
-              Khi bấm Push, Server sẽ lấy bản Code bạn đang viết ở <b>Tab 2</b> cho đấu lần lượt với từng người chơi trên Bảng xếp hạng <b>từ vị trí thấp nhất (#N) ngược lên #1</b>. Thắng thì leo tiếp, <b>thua ở đâu sẽ chốt hạng ngay bên dưới người đó!</b>
+              Đấu trường cướp cờ trực tiếp chạy 100% trên GitHub Pages. Người giữ cờ tối thượng nộp mã nguồn bot gác cổng 24/7.
+              Hãy <b>đọc code của Vua</b> để tìm điểm yếu, viết bot counter và <b>thách đấu cướp cờ</b> để ghi danh lên đỉnh bảng!
             </p>
+
+            <div class="king-profile-box" style="background:rgba(251,191,36,0.1); border:1px solid rgba(251,191,36,0.3); border-radius:8px; padding:12px; margin:12px 0;">
+              <div style="font-size:16px;">👑 <b>ĐƯƠNG KIM VUA GIỮ CỜ:</b> <span id="kingNameDisplay" style="color:#fbbf24; font-weight:700;">Đang tải...</span></div>
+              <div style="font-size:13px; color:#9ca3af; margin-top:4px;">
+                Chiếm cờ lúc: <span id="kingTimeDisplay">-</span> • Hệ số Elo: <b id="kingEloDisplay">-</b>
+              </div>
+            </div>
+
             <div class="push-meta-bar">
-              <span>👤 Người chơi: <b id="ladderPreviewUser">SinhVien_BTL03</b></span>
-              <span>💻 Ngôn ngữ: <b id="ladderPreviewLang">PYTHON</b></span>
-              <button class="btn-outline" onclick="switchMainTab('studio')">✎ Sửa lại Code ở Tab 2</button>
+              <span>👤 Thách đấu với tên: <b id="ladderPreviewUser">SinhVien_BTL03</b></span>
+              <span>💻 Bot thách đấu: <b id="ladderPreviewLang">JAVASCRIPT</b></span>
+              <button class="btn-outline" onclick="switchMainTab('studio')">✎ Chỉnh Sửa Code</button>
             </div>
           </div>
 
-          <button id="btnSubmitRank" class="btn-primary btn-large-push" onclick="handleSubmitGauntlet()">
-            🚀 Push Code Lên Server &amp; Đấu Leo BXH Từ Dưới Lên
-          </button>
+          <div style="display:flex; flex-direction:column; gap:8px; margin-top:14px;">
+            <button id="btnSubmitRank" class="btn-primary btn-large-push" onclick="handleSubmitGauntlet()">
+              ⚔️ THÁCH ĐẤU CƯỚP CỜ NGAY (VS VUA HIỆN TẠI)
+            </button>
+            <div style="display:flex; gap:8px;">
+              <button class="btn-secondary" style="flex:1;" onclick="viewKingCode()">
+                👁️ Xem Code Của Vua (Soi Lỗ Hổng)
+              </button>
+              <button class="btn-outline" style="flex:1;" onclick="handleShareChallenge()">
+                🔗 Sao Chép Link Thách Đấu (Share Bot)
+              </button>
+            </div>
+          </div>
         </div>
 
         <div class="panel">
           <div class="panel-title-row">
-            <h3>🗼 Sơ Đồ Hành Trình Leo Tháp (Từ Đáy BXH Lên Top 1)</h3>
-            <span class="summary-tag">Đã đấu: <b id="gauntletCountBadge">0</b> bậc</span>
+            <h3>🗼 Nhật Ký Trận Đấu Cướp Cờ</h3>
+            <span class="summary-tag">Trận đấu: <b id="gauntletCountBadge">0</b></span>
           </div>
 
           <div id="gauntletSummaryBanner" class="gauntlet-banner">
-            Chưa có lượt leo tháp nào trong phiên này. Hãy bấm nút <b>"🚀 Push Code Lên Server"</b> phía trên để bắt đầu!
+            Chưa có trận cướp cờ nào trong phiên này. Hãy bấm <b>"⚔️ THÁCH ĐẤU CƯỚP CỜ NGAY"</b> để so tài với Vua hiện tại!
           </div>
 
-          <!-- Sơ đồ các bậc thang đã đấu -->
+          <!-- Sơ đồ trận đấu -->
           <div id="gauntletMatchesGrid" class="ladder-stepper-list"></div>
         </div>
       </div>
 
-      <!-- Cột Phải: Bàn cờ 9x9 phát Replay trận PvP giữa Code của bạn và đối thủ trên BXH -->
+      <!-- Cột Phải: Bàn cờ phát Replay trận cướp cờ -->
       <div id="boardHostLadder"></div>
     </div>
   </main>
 
   <!-- ======================================================================= -->
-  <!-- TAB 4: 🏆 BẢNG XẾP HẠNG TOÀN SERVER (FULL-WIDTH LEADERBOARD)            -->
+  <!-- TAB 4: 🏆 BẢNG VÀNG & LỊCH SỬ CƯỚP CỜ (HALL OF FAME)                   -->
   <!-- ======================================================================= -->
   <main id="viewLeaderboard" class="main-tab-view">
     <div class="leaderboard-page-container">
@@ -361,14 +385,14 @@ S . P . R . S . P
       <div class="panel">
         <div class="leaderboard-filter-bar">
           <div>
-            <h2 class="section-heading">🏆 Bảng Xếp Hạng Người Chơi Trên Server</h2>
+            <h2 class="section-heading">🏆 Bảng Vàng Vinh Danh &amp; Lịch Sử Cướp Cờ</h2>
             <p class="section-sub">
-              Thứ hạng được xác lập trực tiếp bằng cơ chế đấu đối kháng Code-vs-Code từ dưới lên.
+              Dữ liệu được đồng bộ trực tiếp thời gian thực qua <b>playhtml</b> và lưu trữ bền vững.
             </p>
           </div>
           <div style="display:flex; gap:8px;">
-            <button class="btn-mini" onclick="loadLeaderboard()">🔄 Làm mới BXH</button>
-            <button class="btn-primary" onclick="switchMainTab('ladder')">🧗 Vào Đấu Leo Hạng Ngay</button>
+            <button class="btn-mini" onclick="loadLeaderboard()">🔄 Tải lại dữ liệu</button>
+            <button class="btn-primary" onclick="switchMainTab('ladder')">⚔️ Vào Đấu Cướp Cờ Ngay</button>
           </div>
         </div>
 
@@ -379,11 +403,11 @@ S . P . R . S . P
                 <th>Hạng</th>
                 <th>Người chơi</th>
                 <th>Ngôn ngữ</th>
-                <th>Điểm Leo Tháp</th>
+                <th>Điểm Cướp Cờ</th>
                 <th>Hệ số Elo</th>
-                <th>Trạng thái Leo Tháp</th>
-                <th>Số bậc vượt qua</th>
-                <th>Thời gian CPU</th>
+                <th>Trạng thái Danh hiệu</th>
+                <th>Số trận thắng</th>
+                <th>Thời gian tính toán</th>
               </tr>
             </thead>
             <tbody id="leaderboardBody"></tbody>
@@ -393,6 +417,6 @@ S . P . R . S . P
     </div>
   </main>
 
-  <script src="/dist/app.js"></script>
+  <script src="./dist/app.js"></script>
 </body>
 </html>

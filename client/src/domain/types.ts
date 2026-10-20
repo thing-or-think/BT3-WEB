@@ -1,6 +1,6 @@
 export type Side = 'RED' | 'BLUE';
 export type CellChar = '.' | 'R' | 'P' | 'S' | 'r' | 'p' | 's';
-export type SupportedLanguage = 'python' | 'cpp' | 'java';
+export type SupportedLanguage = 'javascript' | 'python' | 'cpp' | 'java';
 
 export interface MoveRecord {
   turn: number;
