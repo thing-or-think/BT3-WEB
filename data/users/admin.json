@@ -1,0 +1,9 @@
+{
+  "id": "usr_admin_001",
+  "username": "admin",
+  "email": "admin@arena.vn",
+  "role": "ADMIN",
+  "elo": 2000,
+  "createdAt": "2026-10-20T21:50:00.000Z",
+  "lastLogin": "2026-10-20T21:50:00.000Z"
+}

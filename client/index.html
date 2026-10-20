@@ -35,6 +35,9 @@
         <span class="tab-step">4</span> 🏆 Bảng Vàng &amp; Lịch Sử Cướp Cờ
       </button>
     </nav>
+
+    <!-- KHU VỰC TÀI KHOẢN ĐĂNG NHẬP / ĐĂNG KÝ -->
+    <div id="authHeaderSection" class="auth-header-section"></div>
   </header>
 
   <!-- COMPONENT BÀN CỜ 9x9 DÙNG CHUNG (TỰ ĐỘNG GẮN VÀO TAB ĐANG MỞ) -->
@@ -416,6 +419,63 @@
       </div>
     </div>
   </main>
+
+  <!-- MODAL ĐĂNG KÝ / ĐĂNG NHẬP -->
+  <div id="authModalBackdrop" class="auth-modal-backdrop" onclick="closeAuthModalOnBackdrop(event)">
+    <div class="auth-modal-box">
+      <button class="modal-close-btn" onclick="closeAuthModal()" title="Đóng">✕</button>
+
+      <div class="auth-modal-tabs">
+        <button id="tabBtnLogin" class="auth-tab-btn active" onclick="switchAuthTab('login')">🔑 Đăng Nhập</button>
+        <button id="tabBtnRegister" class="auth-tab-btn" onclick="switchAuthTab('register')">📝 Đăng Ký</button>
+      </div>
+
+      <div id="authAlertBox" class="alert-box-error hidden" style="margin-bottom:12px;"></div>
+
+      <!-- FORM ĐĂNG NHẬP -->
+      <form id="formLogin" onsubmit="handleLoginSubmit(event)">
+        <div class="auth-form-group">
+          <label for="loginIdentifier">Tên tài khoản hoặc Email:</label>
+          <input id="loginIdentifier" class="auth-input" type="text" placeholder="Nhập username hoặc email..." required />
+        </div>
+        <div class="auth-form-group">
+          <label for="loginPassword">Mật khẩu:</label>
+          <input id="loginPassword" class="auth-input" type="password" placeholder="Nhập mật khẩu..." required />
+        </div>
+        <button type="submit" id="btnSubmitLogin" class="auth-btn-submit">Đăng Nhập Vào Đấu Trường</button>
+
+        <div class="auth-tip-card">
+          💡 <b>Tài khoản sẵn có để thử nghiệm:</b><br/>
+          • <b>Admin:</b> <code>admin</code> / Mật khẩu: <code>admin123</code><br/>
+          • <b>Player:</b> <code>MinhKiet_Top1</code> / Mật khẩu: <code>123456</code>
+        </div>
+      </form>
+
+      <!-- FORM ĐĂNG KÝ -->
+      <form id="formRegister" class="hidden" onsubmit="handleRegisterSubmit(event)">
+        <div class="auth-form-group">
+          <label for="regUsername">Tên tài khoản (3 - 20 ký tự):</label>
+          <input id="regUsername" class="auth-input" type="text" placeholder="Ví dụ: CaoThu_BTL..." required />
+        </div>
+        <div class="auth-form-group">
+          <label for="regEmail">Email:</label>
+          <input id="regEmail" class="auth-input" type="email" placeholder="Ví dụ: user@arena.vn..." required />
+        </div>
+        <div class="auth-form-group">
+          <label for="regPassword">Mật khẩu (ít nhất 6 ký tự):</label>
+          <input id="regPassword" class="auth-input" type="password" placeholder="Nhập mật khẩu..." required />
+        </div>
+        <div class="auth-form-group">
+          <label for="regRole">Vai trò tài khoản:</label>
+          <select id="regRole" class="auth-input" style="background:#0f131a; color:#fff;">
+            <option value="USER" selected>👤 Người chơi (Player)</option>
+            <option value="ADMIN">👑 Quản trị viên (Admin - Được tùy chỉnh luật)</option>
+          </select>
+        </div>
+        <button type="submit" id="btnSubmitRegister" class="auth-btn-submit">Tạo Tài Khoản Mới</button>
+      </form>
+    </div>
+  </div>
 
   <script src="./dist/app.js"></script>
 </body>

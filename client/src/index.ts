@@ -1,6 +1,8 @@
+import { AuthService } from './adapters/authService';
 import { PlayhtmlAdapter } from './adapters/playhtmlAdapter';
 import { ArenaStore, MainTabId } from './application/arenaStore';
 import { ReplayController } from './application/replayController';
+import { UserProfile } from './domain/authTypes';
 import {
   cloneGrid,
   computeRedLegalTargets,
@@ -16,6 +18,7 @@ import { EditorView } from './presentation/editorView';
 import { LeaderboardView } from './presentation/leaderboardView';
 
 const playhtmlAdapter = new PlayhtmlAdapter();
+const authService = new AuthService();
 const store = new ArenaStore();
 const boardView = new BoardView();
 const editorView = new EditorView(store);
@@ -549,6 +552,144 @@ function loadLeaderboard(): void {
   leaderboardView.renderLeaderboardTable(entries, editorView.getUsername());
 }
 
+function renderAuthHeader(user: UserProfile | null): void {
+  const container = document.getElementById('authHeaderSection');
+  if (!container) return;
+
+  if (!user) {
+    container.innerHTML = `
+      <button class="btn-primary" style="padding:7px 15px; font-size:13px;" onclick="openAuthModal('login')">
+        🔑 Đăng Nhập / Đăng Ký
+      </button>
+    `;
+    const userInput = document.getElementById('usernameInput') as HTMLInputElement | null;
+    if (userInput && !userInput.value) userInput.value = 'SinhVien_BTL03';
+  } else {
+    const roleBadge = user.role === 'ADMIN'
+      ? '<span class="badge-role role-admin">👑 ADMIN</span>'
+      : '<span class="badge-role role-user">👤 PLAYER</span>';
+
+    container.innerHTML = `
+      <div class="user-profile-badge">
+        <div class="user-avatar-circle">${user.role === 'ADMIN' ? '👑' : '👤'}</div>
+        <div class="user-info-text">
+          <span class="user-name-title">${user.username}</span>
+          <span style="font-size:11px; color:#94a3b8;">${roleBadge} • <b>${user.elo}</b> pts</span>
+        </div>
+        <button class="btn-mini" onclick="handleLogout()" title="Đăng xuất">🚪 Thoát</button>
+      </div>
+    `;
+
+    const userInput = document.getElementById('usernameInput') as HTMLInputElement | null;
+    if (userInput) userInput.value = user.username;
+    const ladderPreviewUser = document.getElementById('ladderPreviewUser');
+    if (ladderPreviewUser) ladderPreviewUser.textContent = user.username;
+  }
+}
+
+function openAuthModal(tab: 'login' | 'register' = 'login'): void {
+  const modal = document.getElementById('authModalBackdrop');
+  if (modal) modal.classList.add('open');
+  switchAuthTab(tab);
+  hideAuthAlert();
+}
+
+function closeAuthModal(): void {
+  const modal = document.getElementById('authModalBackdrop');
+  if (modal) modal.classList.remove('open');
+  hideAuthAlert();
+}
+
+function closeAuthModalOnBackdrop(e: MouseEvent): void {
+  if ((e.target as HTMLElement).id === 'authModalBackdrop') {
+    closeAuthModal();
+  }
+}
+
+function switchAuthTab(tab: 'login' | 'register'): void {
+  const isLogin = tab === 'login';
+  document.getElementById('tabBtnLogin')?.classList.toggle('active', isLogin);
+  document.getElementById('tabBtnRegister')?.classList.toggle('active', !isLogin);
+  document.getElementById('formLogin')?.classList.toggle('hidden', !isLogin);
+  document.getElementById('formRegister')?.classList.toggle('hidden', isLogin);
+  hideAuthAlert();
+}
+
+function showAuthAlert(msg: string): void {
+  const alertEl = document.getElementById('authAlertBox');
+  if (alertEl) {
+    alertEl.textContent = msg;
+    alertEl.classList.remove('hidden');
+  }
+}
+
+function hideAuthAlert(): void {
+  document.getElementById('authAlertBox')?.classList.add('hidden');
+}
+
+async function handleLoginSubmit(e: Event): Promise<void> {
+  e.preventDefault();
+  const idInput = document.getElementById('loginIdentifier') as HTMLInputElement | null;
+  const passInput = document.getElementById('loginPassword') as HTMLInputElement | null;
+  const btn = document.getElementById('btnSubmitLogin') as HTMLButtonElement | null;
+
+  if (!idInput || !passInput) return;
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = '⏳ Đang xác thực...';
+  }
+
+  const res = await authService.login(idInput.value, passInput.value);
+  if (btn) {
+    btn.disabled = false;
+    btn.textContent = 'Đăng Nhập Vào Đấu Trường';
+  }
+
+  if (res.success && res.user) {
+    closeAuthModal();
+    playhtmlAdapter.triggerConfetti();
+    alert(`🎉 Đăng nhập thành công! Chào mừng ${res.user.role === 'ADMIN' ? 'Quản trị viên' : 'người chơi'} [${res.user.username}].`);
+  } else {
+    showAuthAlert(res.error || 'Đăng nhập thất bại!');
+  }
+}
+
+async function handleRegisterSubmit(e: Event): Promise<void> {
+  e.preventDefault();
+  const userInput = document.getElementById('regUsername') as HTMLInputElement | null;
+  const emailInput = document.getElementById('regEmail') as HTMLInputElement | null;
+  const passInput = document.getElementById('regPassword') as HTMLInputElement | null;
+  const roleSelect = document.getElementById('regRole') as HTMLSelectElement | null;
+  const btn = document.getElementById('btnSubmitRegister') as HTMLButtonElement | null;
+
+  if (!userInput || !emailInput || !passInput) return;
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = '⏳ Đang tạo tài khoản...';
+  }
+
+  const role = (roleSelect?.value === 'ADMIN' ? 'ADMIN' : 'USER') as any;
+  const res = await authService.register(userInput.value, emailInput.value, passInput.value, role);
+  if (btn) {
+    btn.disabled = false;
+    btn.textContent = 'Tạo Tài Khoản Mới';
+  }
+
+  if (res.success && res.user) {
+    closeAuthModal();
+    playhtmlAdapter.triggerConfetti();
+    alert(`🎉 Đăng ký tài khoản thành công! Bạn hiện đang đăng nhập với vai trò [${res.user.role}].`);
+  } else {
+    showAuthAlert(res.error || 'Đăng ký thất bại!');
+  }
+}
+
+function handleLogout(): void {
+  if (confirm('Bạn có chắc chắn muốn đăng xuất khỏi tài khoản này?')) {
+    authService.logout();
+  }
+}
+
 // Gắn các hàm toàn cục cho HTML gọi
 Object.assign(window as any, {
   switchMainTab,
@@ -586,7 +727,14 @@ Object.assign(window as any, {
   handleShareChallenge,
   viewKingCode,
   loadLastGauntletReplay,
-  loadLeaderboard
+  loadLeaderboard,
+  openAuthModal,
+  closeAuthModal,
+  closeAuthModalOnBackdrop,
+  switchAuthTab,
+  handleLoginSubmit,
+  handleRegisterSubmit,
+  handleLogout
 });
 
 function updateKingDisplayCard(): void {
@@ -614,6 +762,10 @@ function bootstrapClient(): void {
   playhtmlAdapter.onKingStateChange(() => {
     updateKingDisplayCard();
     loadLeaderboard();
+  });
+
+  authService.onAuthStateChanged((user) => {
+    renderAuthHeader(user);
   });
 
   editorView.selectLanguage('javascript');
