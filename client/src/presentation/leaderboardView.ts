@@ -1,3 +1,4 @@
+import { escapeHtml } from './escapeHtml';
 import { LeaderboardEntryDto, MatchSummary, SubmissionDto } from '../domain/types';
 
 export class LeaderboardView {
@@ -18,9 +19,9 @@ export class LeaderboardView {
               <span>${medals[idx]}</span>
               <span class="badge-lang ${langClass}">${langLabel}</span>
             </div>
-            <div class="podium-username">👤 ${item.username}</div>
+            <div class="podium-username">👤 ${escapeHtml(item.username)}</div>
             <div class="podium-metrics">
-              Điểm: <b>${item.bestScore} pts</b> • Elo: <b>${item.elo}</b> • Vượt qua: <b>${item.winsCount || 0} bậc</b> • CPU: <b>${item.bestExecTimeMs || '-'} ms</b>
+              Điểm: <b>${item.bestScore} pts</b> • Chỉ số hạng: <b>${item.elo}</b> • Vượt qua: <b>${item.winsCount || 0} bậc</b> • Thời gian: <b>${item.bestExecTimeMs || '-'} ms</b>
             </div>
           </div>`;
         })
@@ -51,12 +52,12 @@ export class LeaderboardView {
           item.rank === 1
             ? `<span style="color:#fbbf24;font-weight:700;">👑 Đương kim Top 1</span>`
             : item.stoppedBy
-            ? `🛑 Dừng trước <b>${item.stoppedBy}</b>`
+            ? `🛑 Dừng trước <b>${escapeHtml(item.stoppedBy)}</b>`
             : `Đang giữ hạng #${item.rank}`;
 
         return `<tr class="${rowClass}">
           <td><b>${medal}</b></td>
-          <td>👤 <b>${item.username}</b></td>
+          <td>👤 <b>${escapeHtml(item.username)}</b></td>
           <td><span class="badge-lang ${langClass}">${langLabel}</span></td>
           <td><b>${item.bestScore} pts</b></td>
           <td>${item.elo}</td>
@@ -69,7 +70,7 @@ export class LeaderboardView {
   }
 
   /**
-   * Hiển thị Kết quả Test với 4 Bot tại Client (Tab 2)
+   * Hiển thị Kết quả Test với 4 Bot trên máy chủ (Tab 2)
    */
   public renderClientBotTestResults(
     botMatches: MatchSummary[],
@@ -79,7 +80,7 @@ export class LeaderboardView {
     const wins = botMatches.filter(m => m.result === 'WIN').length;
     if (banner) {
       banner.innerHTML = `
-        🧪 <b>Kết quả Test với ${botMatches.length} Bot tại Client:</b>
+        🧪 <b>Kết quả Test với ${botMatches.length} Bot trên máy chủ:</b>
         Thắng <b>${wins}/${botMatches.length}</b> Bot •
         Bấm vào từng thẻ bên dưới để xem Replay bên phải, hoặc chuyển sang <b>Tab 3 (🧗 Đấu Trường Leo Tháp)</b> để Push Code!
       `;
@@ -96,11 +97,11 @@ export class LeaderboardView {
       card.className = `match-card ${cardClass}`;
       card.innerHTML = `
         <div class="match-card-top">
-          <span>🤖 ${m.botName}</span>
+          <span>🤖 ${escapeHtml(m.botName)}</span>
           <span class="res-pill res-${m.result}">${m.result}</span>
         </div>
         <div style="font-size:11.5px; color:#94a3b8;">
-          Phe: <b>${m.userSide}</b> • Lượt: <b>${m.turnsCount}</b> • CPU: <b>${m.execTimeMs}ms</b>
+          Phe: <b>${m.userSide}</b> • Lượt: <b>${m.turnsCount}</b> • Thời gian: <b>${m.execTimeMs}ms</b>
         </div>
       `;
       const btn = document.createElement('button');
@@ -124,11 +125,11 @@ export class LeaderboardView {
     const ladderMatches = sub.ladderMatches || [];
     if (banner) {
       banner.innerHTML = `
-        🚀 <b>Kết quả Leo BXH của ${sub.username} (${sub.language.toUpperCase()}):</b>
+        🚀 <b>Kết quả Leo BXH của ${escapeHtml(sub.username)} (${sub.language.toUpperCase()}):</b>
         Đã đấu từ dưới lên qua <b>${ladderMatches.length} người chơi</b> (Thắng <b>${sub.winsCount}</b>) •
         ${
           sub.stoppedBy
-            ? `🛑 Dừng chân trước <b>${sub.stoppedBy}</b> → 📌 <b>Chốt Hạng #${userRank}</b>`
+            ? `🛑 Dừng chân trước <b>${escapeHtml(sub.stoppedBy)}</b> → 📌 <b>Chốt Hạng #${userRank}</b>`
             : `👑 <b>Toàn thắng tất cả đối thủ → Chiếm ngôi TOP #1 Toàn Server!</b>`
         }
       `;
@@ -142,21 +143,21 @@ export class LeaderboardView {
       const isWin = lm.result === 'WIN';
       const cardClass = isWin ? 'win-card' : 'loss-card';
       const stepStatus = isWin
-        ? `✅ Vượt qua Hạng #${lm.defenderRankBefore} (${lm.defenderUsername}) → Leo tiếp lên bậc cao hơn ↑`
-        : `🛑 Thua Hạng #${lm.defenderRankBefore} (${lm.defenderUsername}) → 📌 Chốt vị trí tại Hạng #${lm.defenderRankBefore + 1}`;
+        ? `✅ Vượt qua Hạng #${lm.defenderRankBefore} (${escapeHtml(lm.defenderUsername)}) → Leo tiếp lên bậc cao hơn ↑`
+        : `🛑 Thua Hạng #${lm.defenderRankBefore} (${escapeHtml(lm.defenderUsername)}) → 📌 Chốt vị trí tại Hạng #${lm.defenderRankBefore + 1}`;
 
       const card = document.createElement('div');
       card.className = `match-card ${cardClass}`;
       card.innerHTML = `
         <div class="match-card-top">
-          <span>Bậc ${lm.stepNumber} (Đấu từ dưới lên): vs #${lm.defenderRankBefore} ${lm.defenderUsername}</span>
+          <span>Bậc ${lm.stepNumber} (Đấu từ dưới lên): vs #${lm.defenderRankBefore} ${escapeHtml(lm.defenderUsername)}</span>
           <span class="res-pill res-${lm.result}">${lm.result}</span>
         </div>
         <div style="font-size:12px; color:#e2e8f0; font-weight:600;">
           ${stepStatus}
         </div>
         <div style="font-size:11.5px; color:#94a3b8;">
-          Code đối thủ: <b>${lm.defenderLanguage.toUpperCase()}</b> • Số nước đi: <b>${lm.turnsCount}</b> • CPU của bạn: <b>${lm.execTimeMs}ms</b>
+          Code đối thủ: <b>${lm.defenderLanguage.toUpperCase()}</b> • Số nước đi: <b>${lm.turnsCount}</b> • Thời gian của bạn: <b>${lm.execTimeMs}ms</b>
         </div>
       `;
       const btn = document.createElement('button');

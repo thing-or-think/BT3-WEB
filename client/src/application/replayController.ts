@@ -9,7 +9,7 @@ export class ReplayController {
 
   constructor(private readonly onFrameChanged: (frame: ReplayFrame, index: number, total: number) => void) {}
 
-  public loadMatch(initialGrid: CellChar[][], match: MatchSummary): void {
+  public loadMatch(initialGrid: CellChar[][], match: Pick<MatchSummary, 'moves'>): void {
     this.stop();
     const frames: ReplayFrame[] = [];
     const b = cloneGrid(initialGrid);

@@ -142,7 +142,8 @@ export class JsonLeaderboardRepository
    */
   private writeDb(data: DbSchema): void {
     data.version = 2;
-    fs.writeFileSync(this.dbFile, JSON.stringify(data, null, 2), 'utf8');
+    fs.writeFileSync(`${this.dbFile}.tmp`, JSON.stringify(data, null, 2), 'utf8');
+    fs.renameSync(`${this.dbFile}.tmp`, this.dbFile);
 
     const extMap: Record<string, string> = {
       python: 'py',
@@ -201,17 +202,6 @@ export class JsonLeaderboardRepository
       });
     }
 
-    // 3. Tự động đồng bộ sang client/data nếu thư mục client tồn tại
-    const clientDataDir = path.join(process.cwd(), 'client', 'data');
-    if (fs.existsSync(clientDataDir)) {
-      try {
-        fs.writeFileSync(
-          path.join(clientDataDir, 'index.json'),
-          JSON.stringify(indexEntries, null, 2),
-          'utf8'
-        );
-      } catch (_) {}
-    }
   }
 
   public getOrderedCompetitors(): Competitor[] {
@@ -283,9 +273,6 @@ export class JsonLeaderboardRepository
   public saveSubmission(submission: Submission): void {
     const db = this.readDb();
     db.submissions.unshift(submission);
-    if (db.submissions.length > 40) {
-      db.submissions = db.submissions.slice(0, 40);
-    }
     this.writeDb(db);
   }
 

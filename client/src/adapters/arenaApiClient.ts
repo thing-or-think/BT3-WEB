@@ -1,3 +1,4 @@
+import { apiRequest } from './httpClient';
 import {
   ArenaMetaResponse,
   LadderMatchSummary,
@@ -9,17 +10,22 @@ import {
 } from '../domain/types';
 
 export class ArenaApiClient {
+  public fetchMySubmissions(): Promise<Array<Pick<SubmissionDto, 'id' | 'language' | 'status' | 'finalRank' | 'createdAt'>>> {
+    return apiRequest('/my/submissions');
+  }
+  public fetchSubmission(id: string): Promise<SubmissionDto> {
+    return apiRequest(`/submissions/${encodeURIComponent(id)}`);
+  }
+
   public async fetchMeta(): Promise<ArenaMetaResponse> {
-    const res = await fetch('/api/meta');
-    return res.json();
+    return apiRequest('/meta');
   }
 
   public async fetchLeaderboard(): Promise<{
     leaderboard: LeaderboardEntryDto[];
-    recentSubmissions: SubmissionDto[];
+    recentSubmissions: Array<Pick<SubmissionDto, 'id' | 'username' | 'language' | 'status' | 'finalRank' | 'winsCount' | 'createdAt'>>;
   }> {
-    const res = await fetch('/api/leaderboard');
-    return res.json();
+    return apiRequest('/leaderboard');
   }
 
   public async runTestMatch(params: {
@@ -33,16 +39,10 @@ export class ArenaApiClient {
     match?: MatchSummary;
     botMatches?: MatchSummary[];
   }> {
-    const res = await fetch('/api/test-match', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(params)
-    });
-    return res.json();
+    return apiRequest('/test-match', params);
   }
 
   public async submitGauntlet(params: {
-    username: string;
     language: SupportedLanguage;
     sourceCode: string;
   }): Promise<{
@@ -53,11 +53,6 @@ export class ArenaApiClient {
     leaderboard: LeaderboardEntryDto[];
     error?: string;
   }> {
-    const res = await fetch('/api/submit', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(params)
-    });
-    return res.json();
+    return apiRequest('/submit', params);
   }
 }

@@ -1,5 +1,5 @@
 import { AuthService } from './adapters/authService';
-import { PlayhtmlAdapter } from './adapters/playhtmlAdapter';
+import { ServerArena } from './application/serverArena';
 import { ArenaStore, MainTabId } from './application/arenaStore';
 import { ReplayController } from './application/replayController';
 import { UserProfile } from './domain/authTypes';
@@ -9,22 +9,20 @@ import {
   getPieceSide,
   rcToCoord
 } from './domain/boardModel';
-import { chooseClientBotMove, CLIENT_BOT_PROFILES, getLegalMovesForSide } from './domain/clientBots';
-import { ClientMatchSimulator } from './domain/clientSimulator';
-import { STARTER_TEMPLATES } from './domain/starterTemplates';
+import { chooseClientBotMove, getLegalMovesForSide } from './domain/clientBots';
 import { MatchSummary, ReplayFrame, Side, SupportedLanguage } from './domain/types';
 import { BoardView } from './presentation/boardView';
 import { EditorView } from './presentation/editorView';
 import { LeaderboardView } from './presentation/leaderboardView';
 
-const playhtmlAdapter = new PlayhtmlAdapter();
 const authService = new AuthService();
 const store = new ArenaStore();
 const boardView = new BoardView();
 const editorView = new EditorView(store);
 const leaderboardView = new LeaderboardView();
 
-let clientBotTestMatches: MatchSummary[] = [];
+const serverArena = new ServerArena(store, authService, editorView, leaderboardView, loadMatchIntoReplay, switchMainTab, clearReplay);
+function celebrate(): void { (window as any).confetti?.({ particleCount: 80 }); }
 
 const replayController = new ReplayController(
   (frame: ReplayFrame, index: number, total: number) => {
@@ -57,10 +55,31 @@ const replayController = new ReplayController(
     const activeChip = document.getElementById(`moveChip_${index}`);
     if (activeChip) {
       activeChip.classList.add('active');
-      activeChip.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+      const list = activeChip.parentElement;
+      if (list) {
+        const chipRect = activeChip.getBoundingClientRect();
+        const listRect = list.getBoundingClientRect();
+        if (chipRect.bottom > listRect.bottom) list.scrollTop += chipRect.bottom - listRect.bottom;
+        else if (chipRect.top < listRect.top) list.scrollTop -= listRect.top - chipRect.top;
+      }
     }
   }
 );
+
+function clearReplay(): void {
+  replayController.loadMatch(store.initialBoardTemplate, { moves: [] });
+  boardView.renderMoveHistoryChips([], () => {});
+  setPlayPauseButtonState(false);
+  const labels: Record<string, string> = {
+    redPlayerName: 'PHE ĐỎ', bluePlayerName: 'PHE XANH',
+    matchSummaryTag: 'Chọn một trận đấu để xem replay.'
+  };
+  for (const [id, value] of Object.entries(labels)) {
+    const el = document.getElementById(id);
+    if (el) el.textContent = value;
+  }
+  document.getElementById('errorAlertBox')?.classList.add('hidden');
+}
 
 function setPlayPauseButtonState(playing: boolean): void {
   const btn = document.getElementById('btnPlayPause');
@@ -70,9 +89,9 @@ function setPlayPauseButtonState(playing: boolean): void {
 /**
  * Chuyển đổi giữa 4 Tab chính:
  *  - 'practice'    : Tab 1 (Đấu Tập Tay & Luật Chơi)
- *  - 'studio'      : Tab 2 (Phòng Lab Code & Test 4 Bot Client)
- *  - 'ladder'      : Tab 3 (Đấu Trường Cướp Cờ CTF Realtime playhtml)
- *  - 'leaderboard' : Tab 4 (Bảng Vàng & Lịch Sử Cướp Cờ)
+ *  - 'studio'      : Tab 2 (Phòng Lab Code & Chạy thử bot)
+ *  - 'ladder'      : Tab 3 (Đấu xếp hạng trên máy chủ)
+ *  - 'leaderboard' : Tab 4 (Bảng xếp hạng và lịch sử bài nộp)
  */
 function switchMainTab(tabId: MainTabId): void {
   store.activeMainTab = tabId;
@@ -104,12 +123,12 @@ function switchMainTab(tabId: MainTabId): void {
   } else if (tabId === 'studio') {
     const host = document.getElementById('boardHostStudio');
     if (host && sharedBoard) host.appendChild(sharedBoard);
-    if (boardTitle) boardTitle.textContent = '🎬 Replay Kết Quả Test Với 4 Bot Client';
+    if (boardTitle) boardTitle.textContent = '🎬 Replay Kết Quả Chạy Thử Bot';
     switchBoardMode('replay', true);
   } else if (tabId === 'ladder') {
     const host = document.getElementById('boardHostLadder');
     if (host && sharedBoard) host.appendChild(sharedBoard);
-    if (boardTitle) boardTitle.textContent = '⚔️ Replay Trận Đấu Cướp Cờ Realtime CTF';
+    if (boardTitle) boardTitle.textContent = '⚔️ Replay Trận Đấu Xếp Hạng';
     const previewUser = document.getElementById('ladderPreviewUser');
     const previewLang = document.getElementById('ladderPreviewLang');
     if (previewUser) previewUser.textContent = editorView.getUsername();
@@ -270,7 +289,7 @@ function handleManualCellClick(r: number, c: number): void {
       store.manualGameOver = true;
       const badge = document.getElementById('turnStatusBadge');
       if (badge) badge.textContent = '🎉 BẠN THẮNG (Chiếm căn cứ i9)!';
-      playhtmlAdapter.triggerConfetti();
+      celebrate();
       return;
     }
 
@@ -286,7 +305,7 @@ function handleManualCellClick(r: number, c: number): void {
       if (!botMove) {
         store.manualGameOver = true;
         if (badge) badge.textContent = '🎉 BẠN THẮNG (Bot hết nước đi)!';
-        playhtmlAdapter.triggerConfetti();
+        celebrate();
         return;
       }
 
@@ -351,206 +370,12 @@ function handleManualCellClick(r: number, c: number): void {
 }
 
 /**
- * TAB 2: Chạy Test với 4 Bot hoàn toàn Client-Side trong 0.05 giây!
+ * Các thao tác thi đấu được xử lý qua API máy chủ.
  */
-function handleRunTestMatch(): void {
-  const btn = document.getElementById('btnTestMatch') as HTMLButtonElement | null;
-  const botSelect = document.getElementById('testBotSelect') as HTMLSelectElement | null;
-  const sideSelect = document.getElementById('testSideSelect') as HTMLSelectElement | null;
-  const selectedBotLevel = Number(botSelect?.value ?? 0);
-  const userSide: Side = sideSelect?.value === 'BLUE' ? 'BLUE' : 'RED';
-  const userCode = editorView.getCurrentCode();
-
-  if (btn) {
-    btn.disabled = true;
-    btn.textContent = '⏳ Đang mô phỏng trận đấu...';
-  }
-  document.getElementById('errorAlertBox')?.classList.add('hidden');
-
-  try {
-    const botsToTest =
-      selectedBotLevel === 0
-        ? CLIENT_BOT_PROFILES
-        : CLIENT_BOT_PROFILES.filter(b => b.level === selectedBotLevel);
-
-    const results: MatchSummary[] = [];
-
-    botsToTest.forEach(bot => {
-      const match = ClientMatchSimulator.simulateMatch({
-        challenger: {
-          name: editorView.getUsername(),
-          jsCode: userCode,
-          side: userSide
-        },
-        defender: {
-          name: bot.name,
-          level: bot.level,
-          side: userSide === 'RED' ? 'BLUE' : 'RED'
-        }
-      });
-      results.push(match);
-    });
-
-    clientBotTestMatches = results;
-    const badge = document.getElementById('botTestCountBadge');
-    if (badge) badge.textContent = String(results.length);
-
-    leaderboardView.renderClientBotTestResults(results, idx => {
-      const m = results[idx];
-      if (m) {
-        loadMatchIntoReplay(
-          m,
-          `Test Bot Client: ${m.result} vs ${m.botName} (${m.turnsCount} nước • ${m.execTimeMs}ms)`
-        );
-      }
-    });
-
-    switchStudioSubTab('botTestTab');
-
-    if (results.length > 0) {
-      loadMatchIntoReplay(
-        results[results.length - 1],
-        `Test Bot Client: ${results[results.length - 1].result} vs ${results[results.length - 1].botName}`
-      );
-    }
-  } catch (err: any) {
-    alert('Lỗi khi mô phỏng ván cờ: ' + err?.message);
-  } finally {
-    if (btn) {
-      btn.disabled = false;
-      btn.textContent = '🧪 Chạy Test Với 4 Bot (Client)';
-    }
-  }
-}
-
-/**
- * TAB 3: THÁCH ĐẤU CƯỚP CỜ CTF (REALTIME KING OF THE HILL)
- */
-function handleSubmitGauntlet(): void {
-  const btn = document.getElementById('btnSubmitRank') as HTMLButtonElement | null;
-  const username = editorView.getUsername();
-  const userCode = editorView.getCurrentCode();
-  const currentKing = playhtmlAdapter.getKingState();
-
-  if (btn) {
-    btn.disabled = true;
-    btn.textContent = '⚔️ Đang đấu cướp cờ với Đương Kim Vua...';
-  }
-  document.getElementById('errorAlertBox')?.classList.add('hidden');
-
-  setTimeout(() => {
-    try {
-      const match = ClientMatchSimulator.simulateMatch({
-        challenger: {
-          name: username,
-          jsCode: userCode,
-          side: 'RED'
-        },
-        defender: {
-          name: currentKing.kingName,
-          jsCode: currentKing.kingBotCode,
-          side: 'BLUE'
-        }
-      });
-
-      store.currentGauntletMatches = [match];
-      const countBadge = document.getElementById('gauntletCountBadge');
-      if (countBadge) countBadge.textContent = '1';
-
-      const banner = document.getElementById('gauntletSummaryBanner');
-      if (match.result === 'WIN') {
-        // CƯỚP CỜ THÀNH CÔNG!
-        playhtmlAdapter.claimNewKing(username, userCode, currentKing.kingName);
-        if (banner) {
-          banner.className = 'gauntlet-banner win-card';
-          banner.innerHTML = `
-            🎉 <b>CHIẾN THẮNG OANH LIỆT!</b> Bạn đã cướp cờ thành công từ <b>${currentKing.kingName}</b> sau ${match.turnsCount} nước đi!
-            Tên và mã nguồn bot của bạn hiện đã được đưa lên ngôi vị <b>VUA GIỮ CỜ</b> của toàn bộ đấu trường!
-          `;
-        }
-      } else {
-        // THUA TRẬN
-        if (banner) {
-          banner.className = 'gauntlet-banner loss-card';
-          banner.innerHTML = `
-            💀 <b>CƯỚP CỜ THẤT BẠI!</b> Bạn bị đánh bại bởi <b>${currentKing.kingName}</b> (${match.winReason}).
-            Hãy mở Replay bên phải để phân tích điểm yếu, chỉnh sửa lại thuật toán ở Tab 2 và quay lại cướp cờ!
-          `;
-        }
-      }
-
-      const grid = document.getElementById('gauntletMatchesGrid');
-      if (grid) {
-        const cardClass = match.result === 'WIN' ? 'win-card' : 'loss-card';
-        grid.innerHTML = `
-          <div class="match-card ${cardClass}" onclick="loadLastGauntletReplay()">
-            <div class="match-card-top">
-              <span>👑 Trận Cướp Cờ: vs ${currentKing.kingName}</span>
-              <span class="res-pill res-${match.result}">${match.result}</span>
-            </div>
-            <div class="match-card-metrics">
-              Kết quả: <b>${match.result}</b> • Lý do: <b>${match.winReason}</b> • Thời gian: <b>${match.execTimeMs}ms</b>
-            </div>
-          </div>
-        `;
-      }
-
-      loadMatchIntoReplay(
-        match,
-        `Trận Đấu Cướp Cờ: ${match.result} vs ${currentKing.kingName} (${match.turnsCount} nước)`
-      );
-      loadLeaderboard();
-    } catch (err: any) {
-      alert('Lỗi trong trận thách đấu cướp cờ: ' + err?.message);
-    } finally {
-      if (btn) {
-        btn.disabled = false;
-        btn.textContent = '⚔️ THÁCH ĐẤU CƯỚP CỜ (ĐẤU VỚI VUA HIỆN TẠI)';
-      }
-    }
-  }, 50);
-}
-
-function loadLastGauntletReplay(): void {
-  const m = store.currentGauntletMatches[0];
-  if (m) loadMatchIntoReplay(m, `Trận Cướp Cờ: ${m.result} vs ${m.botName}`);
-}
-
-/**
- * Tạo link chia sẻ thách đấu để gửi cho bạn bè
- */
-function handleShareChallenge(): void {
-  const username = editorView.getUsername();
-  const code = editorView.getCurrentCode();
-  const url = playhtmlAdapter.generateShareableUrl(username, code);
-
-  navigator.clipboard.writeText(url).then(() => {
-    alert(
-      `🔗 ĐÃ SAO CHÉP LINK THÁCH ĐẤU VÀO CLIPBOARD!\n\nHãy gửi đường link này cho bạn bè hoặc thầy cô. Khi họ mở link, bot của bạn sẽ lập tức trở thành Boss giữ cờ trên máy của họ để họ thử sức cướp cờ!`
-    );
-  }).catch(() => {
-    prompt('Link thách đấu của bạn:', url);
-  });
-}
-
-/**
- * Nạp code của Vua hiện tại vào Editor để phân tích
- */
-function viewKingCode(): void {
-  const king = playhtmlAdapter.getKingState();
-  const editor = document.getElementById('codeEditor') as HTMLTextAreaElement | null;
-  if (editor && king.kingBotCode) {
-    if (confirm(`Bạn có muốn nạp mã nguồn Bot của [${king.kingName}] vào Editor để đọc và phân tích điểm yếu không?`)) {
-      editor.value = king.kingBotCode;
-      switchMainTab('studio');
-    }
-  }
-}
-
-function loadLeaderboard(): void {
-  const entries = playhtmlAdapter.getHallOfFame();
-  leaderboardView.renderLeaderboardTable(entries, editorView.getUsername());
-}
+function handleRunTestMatch(): void { void serverArena.runTest(); }
+function handleSubmitGauntlet(): void { void serverArena.submit(); }
+function loadLeaderboard(): void { void serverArena.refresh(); }
+function downloadMatchLog(): void { serverArena.downloadLog(); }
 
 function renderAuthHeader(user: UserProfile | null): void {
   const container = document.getElementById('authHeaderSection');
@@ -559,6 +384,8 @@ function renderAuthHeader(user: UserProfile | null): void {
   const topbarNav = document.querySelector('.main-nav-tabs') as HTMLElement | null;
 
   if (!user) {
+    switchGateAuthTab('login');
+    document.querySelectorAll<HTMLInputElement>('input[type="password"]').forEach(input => { input.value = ''; });
     if (gateScreen) gateScreen.classList.remove('hidden');
     if (arenaContainer) arenaContainer.classList.add('hidden');
     if (topbarNav) topbarNav.style.display = 'none';
@@ -585,7 +412,7 @@ function renderAuthHeader(user: UserProfile | null): void {
           <div class="user-avatar-circle">${user.role === 'ADMIN' ? '👑' : '👤'}</div>
           <div class="user-info-text">
             <span class="user-name-title">${user.username}</span>
-            <span style="font-size:11px; color:#94a3b8;">${roleBadge} • <b>${user.elo}</b> pts</span>
+            <span style="font-size:11px; color:#94a3b8;">${roleBadge}</span>
           </div>
           <button class="btn-mini" onclick="handleLogout()" title="Đăng xuất">🚪 Thoát</button>
         </div>
@@ -593,7 +420,7 @@ function renderAuthHeader(user: UserProfile | null): void {
     }
 
     const userInput = document.getElementById('usernameInput') as HTMLInputElement | null;
-    if (userInput) userInput.value = user.username;
+    if (userInput) { userInput.value = user.username; userInput.readOnly = true; }
     const ladderPreviewUser = document.getElementById('ladderPreviewUser');
     if (ladderPreviewUser) ladderPreviewUser.textContent = user.username;
   }
@@ -635,7 +462,7 @@ async function handleGateLoginSubmit(e: Event): Promise<void> {
   }
 
   if (res.success && res.user) {
-    playhtmlAdapter.triggerConfetti();
+    celebrate();
   } else {
     showGateAlert(res.error || 'Đăng nhập thất bại!');
   }
@@ -646,7 +473,6 @@ async function handleGateRegisterSubmit(e: Event): Promise<void> {
   const userInput = document.getElementById('gateRegUser') as HTMLInputElement | null;
   const emailInput = document.getElementById('gateRegEmail') as HTMLInputElement | null;
   const passInput = document.getElementById('gateRegPass') as HTMLInputElement | null;
-  const roleSelect = document.getElementById('gateRegRole') as HTMLSelectElement | null;
   const btn = document.getElementById('btnGateSubmitRegister') as HTMLButtonElement | null;
 
   if (!userInput || !emailInput || !passInput) return;
@@ -655,26 +481,16 @@ async function handleGateRegisterSubmit(e: Event): Promise<void> {
     btn.textContent = '⏳ Đang tạo tài khoản...';
   }
 
-  const role = (roleSelect?.value === 'ADMIN' ? 'ADMIN' : 'USER') as any;
-  const res = await authService.register(userInput.value, emailInput.value, passInput.value, role);
+  const res = await authService.register(userInput.value, emailInput.value, passInput.value);
   if (btn) {
     btn.disabled = false;
     btn.textContent = 'Tạo Tài Khoản & Vào Chơi →';
   }
 
   if (res.success && res.user) {
-    playhtmlAdapter.triggerConfetti();
+    celebrate();
   } else {
     showGateAlert(res.error || 'Đăng ký thất bại!');
-  }
-}
-
-async function quickLogin(user: string, pass: string): Promise<void> {
-  const res = await authService.login(user, pass);
-  if (res.success && res.user) {
-    playhtmlAdapter.triggerConfetti();
-  } else {
-    alert(res.error || 'Đăng nhập nhanh thất bại');
   }
 }
 
@@ -738,7 +554,7 @@ async function handleLoginSubmit(e: Event): Promise<void> {
 
   if (res.success && res.user) {
     closeAuthModal();
-    playhtmlAdapter.triggerConfetti();
+    celebrate();
     alert(`🎉 Đăng nhập thành công! Chào mừng ${res.user.role === 'ADMIN' ? 'Quản trị viên' : 'người chơi'} [${res.user.username}].`);
   } else {
     showAuthAlert(res.error || 'Đăng nhập thất bại!');
@@ -750,7 +566,6 @@ async function handleRegisterSubmit(e: Event): Promise<void> {
   const userInput = document.getElementById('regUsername') as HTMLInputElement | null;
   const emailInput = document.getElementById('regEmail') as HTMLInputElement | null;
   const passInput = document.getElementById('regPassword') as HTMLInputElement | null;
-  const roleSelect = document.getElementById('regRole') as HTMLSelectElement | null;
   const btn = document.getElementById('btnSubmitRegister') as HTMLButtonElement | null;
 
   if (!userInput || !emailInput || !passInput) return;
@@ -759,8 +574,7 @@ async function handleRegisterSubmit(e: Event): Promise<void> {
     btn.textContent = '⏳ Đang tạo tài khoản...';
   }
 
-  const role = (roleSelect?.value === 'ADMIN' ? 'ADMIN' : 'USER') as any;
-  const res = await authService.register(userInput.value, emailInput.value, passInput.value, role);
+  const res = await authService.register(userInput.value, emailInput.value, passInput.value);
   if (btn) {
     btn.disabled = false;
     btn.textContent = 'Tạo Tài Khoản Mới';
@@ -768,16 +582,16 @@ async function handleRegisterSubmit(e: Event): Promise<void> {
 
   if (res.success && res.user) {
     closeAuthModal();
-    playhtmlAdapter.triggerConfetti();
+    celebrate();
     alert(`🎉 Đăng ký tài khoản thành công! Bạn hiện đang đăng nhập với vai trò [${res.user.role}].`);
   } else {
     showAuthAlert(res.error || 'Đăng ký thất bại!');
   }
 }
 
-function handleLogout(): void {
+async function handleLogout(): Promise<void> {
   if (confirm('Bạn có chắc chắn muốn đăng xuất khỏi tài khoản này?')) {
-    authService.logout();
+    try { await authService.logout(); } catch (error) { showAuthAlert((error as Error).message); alert((error as Error).message); }
   }
 }
 
@@ -815,9 +629,7 @@ Object.assign(window as any, {
   resetTemplateForCurrentLang: () => editorView.resetTemplateForCurrentLang(),
   handleRunTestMatch,
   handleSubmitGauntlet,
-  handleShareChallenge,
-  viewKingCode,
-  loadLastGauntletReplay,
+  downloadMatchLog,
   loadLeaderboard,
   openAuthModal,
   closeAuthModal,
@@ -828,45 +640,22 @@ Object.assign(window as any, {
   handleLogout,
   switchGateAuthTab,
   handleGateLoginSubmit,
-  handleGateRegisterSubmit,
-  quickLogin
+  handleGateRegisterSubmit
 });
 
-function updateKingDisplayCard(): void {
-  const king = playhtmlAdapter.getKingState();
-  const nameEl = document.getElementById('kingNameDisplay');
-  const timeEl = document.getElementById('kingTimeDisplay');
-  const eloEl = document.getElementById('kingEloDisplay');
-  const bossEl = document.getElementById('ladderCurrentBossName');
-
-  if (nameEl) nameEl.textContent = king.kingName;
-  if (timeEl) timeEl.textContent = king.capturedAt;
-  if (eloEl) eloEl.textContent = String(king.kingElo);
-  if (bossEl) bossEl.textContent = king.kingName;
-}
-
-function bootstrapClient(): void {
+async function bootstrapClient(): Promise<void> {
   boardView.renderCoordHeaders();
   editorView.bindTabIndentation();
-
-  store.initialBoardTemplate = ClientMatchSimulator.INITIAL_BOARD;
-  store.templatesByLang = { ...STARTER_TEMPLATES } as any;
-  store.userDraftByLang = { ...STARTER_TEMPLATES } as any;
-  store.currentBoard = cloneGrid(ClientMatchSimulator.INITIAL_BOARD);
-
-  playhtmlAdapter.onKingStateChange(() => {
-    updateKingDisplayCard();
-    loadLeaderboard();
-  });
-
-  authService.onAuthStateChanged((user) => {
+  authService.onAuthStateChanged(user => {
     renderAuthHeader(user);
+    if (user) { void serverArena.refresh(); }
+    else {
+      replayController.stop();
+      serverArena.clearPrivateState();
+    }
   });
-
-  editorView.selectLanguage('javascript');
   switchMainTab('studio');
-  updateKingDisplayCard();
-  loadLeaderboard();
+  await serverArena.initialize();
+  try { await authService.restoreSession(); } catch { /* The login form remains available. */ }
 }
-
-bootstrapClient();
+void bootstrapClient();

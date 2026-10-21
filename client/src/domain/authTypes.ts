@@ -4,9 +4,7 @@ export interface UserProfile {
   id: string;
   username: string;
   email: string;
-  passwordHash: string;
   role: UserRole;
-  elo: number;
   createdAt: string;
   lastLogin: string;
 }

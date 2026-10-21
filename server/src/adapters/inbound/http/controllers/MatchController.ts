@@ -19,7 +19,9 @@ export class MatchController {
   public playBotMove = (req: Request, res: Response): void => {
     try {
       const { board, side = 'BLUE', botLevel = 2 } = req.body || {};
-      if (!Array.isArray(board) || board.length !== 9) {
+      if (!Array.isArray(board) || board.length !== 9 ||
+          board.some(row => !Array.isArray(row) || row.length !== 9 || row.some(cell => !['.', 'R', 'P', 'S', 'r', 'p', 's'].includes(cell))) ||
+          !['RED', 'BLUE'].includes(side) || !Number.isInteger(botLevel) || botLevel < 1 || botLevel > 4) {
         res.status(400).json({ error: 'Bàn cờ không hợp lệ' });
         return;
       }
