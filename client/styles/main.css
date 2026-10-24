@@ -2267,3 +2267,49 @@ body {
 .term-warn { color: #fbbf24; }
 .term-success { color: #4ade80; font-weight: 700; }
 
+:root { color-scheme: dark; }
+.server-status {
+  margin: 12px 24px;
+  padding: 12px 16px;
+  border: 1px solid #334155;
+  border-radius: 10px;
+  background: #112235;
+  color: #b9e6d3;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.server-status.server-error { background: #351923; color: #fecaca; border-color: #7f3545; }
+.submission-history-panel { margin: 20px 24px; }
+.submission-history-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid #334155;
+}
+button:disabled { opacity: .55; cursor: not-allowed; }
+.workspace-column, .board-column, .two-col-layout > *, .studio-layout > * { min-width: 0; }
+.gauntlet-banner, .player-info, .summary-tag { overflow-wrap: anywhere; }
+@media (max-width: 600px) {
+  .topbar { position: static; padding: 12px; height: auto; flex-wrap: wrap; }
+  .main-nav-tabs { max-width: 100%; width: 100%; overflow-x: auto; }
+  .main-tab-view { padding: 12px; }
+  .panel { padding: 12px; }
+  .server-status, .submission-history-panel { margin: 12px; }
+  .board-middle { position: relative; padding: 0 16px; }
+  .chess-board { width: 100%; height: auto; aspect-ratio: 1; gap: 2px; }
+  .rank-col { position: absolute; top: 0; bottom: 0; height: 100%; width: 14px; }
+  .rank-col:first-child { left: 0; }
+  .rank-col:last-child { right: 0; }
+  .rps-piece { width: 100%; height: auto; aspect-ratio: 1; border-width: 1px; }
+  .piece-svg { width: 14px; height: 14px; }
+  .piece-label { font-size: 6px; }
+  .base-flag-label { font-size: 7px; }
+  .board-header, .player-bar, .player-info, .replay-controls, .test-match-controls { flex-wrap: wrap; }
+  .player-info { min-width: 0; }
+  .table-scroll-full { overflow-x: auto; }
+  .brand, .user-input-group { min-width: 0; }
+  .brand-logo { white-space: nowrap; padding: 8px; font-size: 20px; }
+}

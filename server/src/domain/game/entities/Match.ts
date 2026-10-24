@@ -63,6 +63,12 @@ export class Match {
     this.winReason = 'NO_MOVES';
   }
 
+  public finishByTurnLimit(): void {
+    this.winnerSide = this.board.resolveTieBreakWinner();
+    this.outcome = this.winnerSide === this.userSide ? 'WIN' : 'LOSS';
+    this.winReason = 'MAX_TURNS';
+  }
+
   public finishByUserFault(
     faultOutcome: 'TLE' | 'RE' | 'INVALID_MOVE',
     reason: WinReason,

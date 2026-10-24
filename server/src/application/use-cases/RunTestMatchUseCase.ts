@@ -93,6 +93,7 @@ export class RunTestMatchUseCase implements IRunTestMatchUseCase {
       session.dispose();
     }
 
+    if (!match.getWinnerSide()) match.finishByTurnLimit();
     const turnsCount = match.getTurnsCount();
     const outcome = match.getOutcome();
     const score = ScoringPolicy.calculateMatchScore(outcome, botProfile.basePoints, turnsCount);

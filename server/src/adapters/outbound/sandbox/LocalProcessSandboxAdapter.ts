@@ -78,7 +78,7 @@ public class JavaHarness {
             ByteArrayInputStream bais = new ByteArrayInputStream(sb.toString().getBytes(StandardCharsets.UTF_8));
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             System.setIn(bais);
-            System.setOut(new PrintStream(baos, true, StandardCharsets.UTF_8));
+            System.setOut(new PrintStream(baos, true, "UTF-8"));
             try {
                 Main.main(new String[0]);
             } catch (Throwable t) {
@@ -86,7 +86,7 @@ public class JavaHarness {
                 realOut.flush();
                 continue;
             }
-            String out = baos.toString(StandardCharsets.UTF_8).trim();
+            String out = baos.toString("UTF-8").trim();
             String firstLine = out.isEmpty() ? "" : out.split("\\\\R")[0].trim();
             realOut.println(firstLine);
             realOut.flush();
@@ -138,6 +138,11 @@ class LocalProcessMatchSession implements ISandboxMatchSession {
 
     this.proc.stdout.on('data', (chunk: Buffer) => {
       this.buffer += chunk.toString('utf8');
+      if (this.buffer.length > 64 * 1024) {
+        this.failPending('Output vượt quá giới hạn 64 KB.');
+        this.dispose();
+        return;
+      }
       let nlIdx: number;
       while ((nlIdx = this.buffer.indexOf('\n')) !== -1) {
         const line = this.buffer.slice(0, nlIdx).trim();
@@ -147,12 +152,18 @@ class LocalProcessMatchSession implements ISandboxMatchSession {
       }
     });
 
+    // Drain stderr so a verbose bot cannot block on a full pipe.
+    this.proc.stderr.on('data', () => {});
+    this.proc.on('error', error => this.failPending(error.message));
+    this.proc.stdin.on('error', error => this.failPending(error.message));
     this.proc.on('exit', code => {
-      while (this.lineCallbacks.length > 0) {
-        const cb = this.lineCallbacks.shift();
-        if (cb) cb({ ok: false, reason: `Tiến trình thoát bất ngờ (code ${code})` });
-      }
+      this.failPending(`Tiến trình thoát bất ngờ (code ${code})`);
     });
+  }
+
+  private failPending(reason: string): void {
+    const callbacks = this.lineCallbacks.splice(0);
+    callbacks.forEach(cb => cb({ ok: false, reason }));
   }
 
   public async runTurn(

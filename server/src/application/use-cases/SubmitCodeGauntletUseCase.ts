@@ -174,7 +174,7 @@ export class SubmitCodeGauntletUseCase implements ISubmitCodeGauntletUseCase {
     if (!compiledChallenger.ok) {
       const failedSub = new Submission(
         `sub_${Date.now()}_${crypto.randomBytes(3).toString('hex')}`,
-        existing ? existing.id : `user_${crypto.randomBytes(4).toString('hex')}`,
+        command.userId || (existing ? existing.id : `user_${crypto.randomBytes(4).toString('hex')}`),
         cleanUsername,
         command.language,
         command.sourceCode,
@@ -284,7 +284,7 @@ export class SubmitCodeGauntletUseCase implements ISubmitCodeGauntletUseCase {
     const newElo = Math.max(850, 1750 - (finalRank - 1) * 160);
 
     const challengerCompetitor = new Competitor(
-      existing ? existing.id : `user_${crypto.randomBytes(4).toString('hex')}`,
+      command.userId || (existing ? existing.id : `user_${crypto.randomBytes(4).toString('hex')}`),
       cleanUsername,
       false,
       command.language,
