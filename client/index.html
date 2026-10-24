@@ -595,14 +595,17 @@ stdout: b1 b2</pre>
 
           <div style="display:flex; flex-direction:column; gap:8px; margin-top:14px;">
             <button id="btnSubmitRank" class="btn-primary btn-large-push" onclick="handleSubmitGauntlet()">
-              ⚔️ THÁCH ĐẤU CƯỚP CỜ NGAY (VS VUA HIỆN TẠI)
+              ⚔️ BẮT ĐẦU LEO THÁP &amp; CƯỚP CỜ (5 BẬC GAUNTLET)
             </button>
             <div style="display:flex; gap:8px; flex-wrap:wrap;">
+              <button class="btn-primary" style="flex:1; min-width:140px; background:#4f46e5;" onclick="handleDirectKingChallenge()">
+                👑 Đấu Trực Tiếp Với Vua (1-vs-1 CTF)
+              </button>
               <button class="btn-secondary" style="flex:1; min-width:140px;" onclick="viewKingCode()">
                 👁️ Xem Code Của Vua (Soi Lỗ Hổng)
               </button>
               <button class="btn-outline" style="flex:1; min-width:140px;" onclick="handleShareChallenge()">
-                🔗 Sao Chép Link Thách Đấu (Share Bot)
+                🔗 Sao Chép Link Thách Đấu
               </button>
               <button id="btnDownloadLog" class="btn-outline" style="flex:1; min-width:140px;" onclick="downloadMatchLog()">
                 ⬇ Tải Log Trận Đấu
@@ -732,12 +735,17 @@ stdout: b1 b2</pre>
       <div class="admin-modal-header">
         <div class="admin-icon-crown">👑</div>
         <div>
-          <h3 style="font-size:17px; font-weight:800; color:#fbbf24;">BẢNG QUẢN TRỊ — TÙY CHỈNH LUẬT ĐẤU TRƯỜNG</h3>
-          <p style="font-size:12px; color:#94a3b8;">Cấu hình các thông số thi đấu trực tiếp tại Client không cần backend</p>
+          <h3 style="font-size:17px; font-weight:800; color:#fbbf24;">BẢNG QUẢN TRỊ — TÙY CHỈNH LUẬT &amp; MASTER DATA</h3>
+          <p style="font-size:12px; color:#94a3b8;">Xác thực bằng mã PIN Quản trị viên để can thiệp dữ liệu playhtml thời gian thực</p>
         </div>
       </div>
 
       <div class="admin-form-body" style="margin-top:16px;">
+        <div class="auth-form-group">
+          <label for="adminPinInput">Mã PIN Quản Trị Viên (Mặc định: <code>admin123</code>):</label>
+          <input id="adminPinInput" class="auth-input" type="password" value="admin123" placeholder="Nhập mã PIN Admin..." />
+        </div>
+
         <div class="auth-form-group">
           <label for="adminMaxTurnsInput">Số lượt tối đa mỗi trận (Max Turns):</label>
           <input id="adminMaxTurnsInput" class="auth-input" type="number" min="30" max="400" value="160" />
@@ -762,13 +770,21 @@ stdout: b1 b2</pre>
           </select>
         </div>
 
-        <div style="display:flex; gap:10px; margin-top:18px;">
-          <button type="button" class="btn-primary" style="flex:1;" onclick="saveAdminRules()">
-            💾 Áp Dụng Thay Đổi Ngay
+        <div style="display:flex; flex-direction:column; gap:8px; margin-top:18px;">
+          <button type="button" class="btn-primary" onclick="saveAdminRules()">
+            💾 Áp Dụng Luật Mới &amp; Đồng Bộ playhtml
           </button>
-          <button type="button" class="btn-outline" onclick="closeAdminModal()">
-            Đóng
-          </button>
+          <div style="display:flex; gap:8px; flex-wrap:wrap;">
+            <button type="button" class="btn-secondary" style="flex:1; min-width:140px;" onclick="handleAdminResetArena()">
+              🔄 Reset Vua Cờ &amp; BXH
+            </button>
+            <button type="button" class="btn-outline" style="flex:1; min-width:140px;" onclick="handleAdminRemovePlayer()">
+              🗑️ Xóa Người Chơi Khỏi BXH
+            </button>
+            <button type="button" class="btn-outline" style="flex:1; min-width:140px;" onclick="handleExportMasterDb()">
+              ⬇ Xuất Master DB (JSON)
+            </button>
+          </div>
         </div>
       </div>
     </div>

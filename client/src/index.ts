@@ -325,7 +325,7 @@ function exportMatchReplayJson(): void {
 }
 
 function downloadMatchLog(): void {
-  const match = currentActiveMatch || store.currentGauntletMatches[0];
+  const match = currentActiveMatch || store.currentGauntletMatches[store.currentGauntletMatches.length - 1];
   if (!match) {
     alert('Chưa có dữ liệu trận đấu để tải log. Hãy chạy test hoặc thách đấu trước!');
     return;
@@ -335,6 +335,7 @@ function downloadMatchLog(): void {
     version: '2.0.0-serverless',
     exportedAt: new Date().toISOString(),
     match,
+    allGauntletMatches: store.currentGauntletMatches,
     framesCount: replayController.getStatesCount()
   };
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
@@ -419,7 +420,7 @@ function toggleReplayPlay(): void {
  * Chuyển đổi giữa 4 Tab chính:
  *  - 'practice'    : Tab 1 (Đấu Tập Tay & Luật Chơi)
  *  - 'studio'      : Tab 2 (Phòng Lab Code & Test 4 Bot Client)
- *  - 'ladder'      : Tab 3 (Đấu Trường Cướp Cờ CTF Realtime playhtml)
+ *  - 'ladder'      : Tab 3 (Đấu Trường Leo Tháp & Cướp Cờ CTF Realtime playhtml)
  *  - 'leaderboard' : Tab 4 (Bảng Vàng & Lịch Sử Cướp Cờ)
  */
 function switchMainTab(tabId: MainTabId): void {
@@ -457,7 +458,7 @@ function switchMainTab(tabId: MainTabId): void {
   } else if (tabId === 'ladder') {
     const host = document.getElementById('boardHostLadder');
     if (host && sharedBoard) host.appendChild(sharedBoard);
-    if (boardTitle) boardTitle.textContent = '⚔️ Replay Trận Đấu Cướp Cờ Realtime CTF';
+    if (boardTitle) boardTitle.textContent = '⚔️ Replay Trận Đấu Leo Tháp & Cướp Cờ CTF';
     const previewUser = document.getElementById('ladderPreviewUser');
     const previewLang = document.getElementById('ladderPreviewLang');
     if (previewUser) previewUser.textContent = editorView.getUsername();
@@ -557,7 +558,7 @@ function switchBoardMode(mode: 'replay' | 'manual', resetIfNeeded = true): void 
         onCellClick: handleCellClick
       });
       const summary = document.getElementById('matchSummaryTag');
-      if (summary) summary.textContent = '🎬 Sẵn sàng phát Replay (Bấm Chạy Thử Bot để xem)';
+      if (summary) summary.textContent = '🎬 Sẵn sàng phát Replay (Bấm Bắt Đầu Leo Tháp để xem)';
       const redName = document.getElementById('redPlayerName');
       const blueName = document.getElementById('bluePlayerName');
       if (redName) redName.textContent = '👤 BẠN (PHE ĐỎ - Đi trước)';
@@ -754,7 +755,8 @@ function handleRunTestMatch(): void {
             name: bot.name,
             level: bot.level,
             side: userSide === 'RED' ? 'BLUE' : 'RED'
-          }
+          },
+          maxTurns: playhtmlAdapter.getArenaRules().maxTurns
         });
         results.push(match);
       });
@@ -796,38 +798,162 @@ function handleRunTestMatch(): void {
 }
 
 /**
- * Thách đấu cướp cờ Đương Kim Vua Giữ Cờ (Realtime playhtml CTF)
+ * CƠ CHẾ LEO THÁP GAUNTLET LADDER 5 BẬC THANG & CƯỚP CỜ CTF
  */
 function handleSubmitGauntlet(): void {
   const btn = document.getElementById('btnSubmitRank') as HTMLButtonElement | null;
   const username = editorView.getUsername();
   const userCode = editorView.getCurrentCode();
   const currentKing = playhtmlAdapter.getKingState();
+  const rules = playhtmlAdapter.getArenaRules();
 
   if (store.currentLang !== 'javascript') {
-    alert('Để thách đấu cướp cờ trong chế độ Serverless, mã nguồn bot của bạn phải viết bằng JavaScript để các người chơi khác có thể nạp và đối đầu!');
+    alert('Để tham gia Leo Tháp & Cướp Cờ Serverless, bot của bạn phải viết bằng JavaScript để mọi người chơi khác có thể nạp thi đấu!');
     return;
   }
 
   if (btn) {
     btn.disabled = true;
-    btn.textContent = '⚔️ Đang đấu cướp cờ với Đương Kim Vua...';
+    btn.textContent = '⚔️ Đang leo tháp qua các bậc cao thủ...';
   }
   document.getElementById('errorAlertBox')?.classList.add('hidden');
 
   setTimeout(() => {
     try {
-      const match = ClientMatchSimulator.simulateMatch({
-        challenger: {
-          name: username,
-          jsCode: userCode,
-          side: 'RED'
-        },
-        defender: {
+      const ladderStages = [
+        { level: 1, name: 'Bot Lv1: Tập Sự', tier: 'Rank Đồng', desc: 'Cao thủ bậc 1' },
+        { level: 2, name: 'Bot Lv2: Trinh Sát', tier: 'Rank Bạc', desc: 'Cao thủ bậc 2' },
+        { level: 3, name: 'Bot Lv3: Chiến Thuật', tier: 'Rank Vàng', desc: 'Cao thủ bậc 3' },
+        { level: 4, name: 'Bot Lv4: Đại Sư', tier: 'Rank Kim Cương', desc: 'Đại cao thủ bán kết' },
+        {
+          level: 5,
           name: currentKing.kingName,
-          jsCode: currentKing.kingBotCode,
-          side: 'BLUE'
+          tier: 'Vương Miện CTF',
+          desc: 'Đương Kim Vua Giữ Cờ',
+          isKing: true,
+          jsCode: currentKing.kingBotCode
         }
+      ];
+
+      const ladderMatches: MatchSummary[] = [];
+      let stepsConquered = 0;
+      let stoppedBy = '';
+      let winReason = '';
+      let totalTime = 0;
+
+      for (let i = 0; i < ladderStages.length; i++) {
+        const stage = ladderStages[i];
+        const match = ClientMatchSimulator.simulateMatch({
+          challenger: {
+            name: username,
+            jsCode: userCode,
+            side: 'RED'
+          },
+          defender: stage.isKing
+            ? { name: stage.name, jsCode: stage.jsCode, side: 'BLUE' }
+            : { name: stage.name, level: stage.level, side: 'BLUE' },
+          maxTurns: rules.maxTurns
+        });
+
+        ladderMatches.push(match);
+        totalTime += match.execTimeMs;
+
+        if (match.result === 'WIN') {
+          stepsConquered++;
+          if (stage.isKing) {
+            // Đánh bại cả Vua tại bậc 5 -> Cướp cờ thành công!
+            playhtmlAdapter.claimNewKing(username, userCode, currentKing.kingName);
+            break;
+          }
+        } else {
+          // Thua hoặc hòa -> Dừng tháp tại bậc này!
+          stoppedBy = stage.name;
+          winReason = match.winReason;
+          playhtmlAdapter.recordLadderResult({
+            username,
+            stepsConquered,
+            bestExecTimeMs: Math.round(totalTime / ladderMatches.length),
+            stoppedBy: `${stoppedBy} (${stage.tier})`
+          });
+          break;
+        }
+      }
+
+      store.currentGauntletMatches = ladderMatches;
+      const countBadge = document.getElementById('gauntletCountBadge');
+      if (countBadge) countBadge.textContent = String(ladderMatches.length);
+
+      // Render danh sách các trận đấu trên tháp
+      renderGauntletMatchesGrid(ladderMatches, ladderStages);
+
+      // Cập nhật banner kết quả leo tháp
+      const banner = document.getElementById('gauntletSummaryBanner');
+      if (banner) {
+        if (stepsConquered === 5) {
+          banner.className = 'gauntlet-banner win-card';
+          banner.innerHTML = `
+            🎉 <b>CHIẾN THẮNG TUYỆT ĐỐI (5/5 BẬC)!</b> Bạn đã quét sạch 4 Cao thủ hệ thống và hạ gục <b>${currentKing.kingName}</b>!
+            Vương Miện <b>VUA GIỮ CỜ</b> và Top 1 Bảng Vàng toàn mạng đã thuộc về bạn!
+          `;
+          celebrate();
+        } else {
+          const tierNames = ['Chưa phân hạng', 'Rank Đồng', 'Rank Bạc', 'Rank Vàng', 'Rank Kim Cương'];
+          const achievedTier = tierNames[stepsConquered] || 'Rank Thử Nghiệm';
+          banner.className = 'gauntlet-banner loss-card';
+          banner.innerHTML = `
+            🗼 <b>KẾT QUẢ LEO THÁP:</b> Đạt <b>${achievedTier}</b> (Vượt qua <b>${stepsConquered}/5</b> bậc).
+            Dừng bước tại Bậc ${stepsConquered + 1} trước <b>${stoppedBy}</b> (${winReason}). Thành tích đã được đồng bộ lên Bảng Vàng playhtml!
+          `;
+        }
+      }
+
+      // Nạp trận đấu cuối cùng (kịch tính nhất) vào Replay Controller
+      if (ladderMatches.length > 0) {
+        const lastM = ladderMatches[ladderMatches.length - 1];
+        loadMatchIntoReplay(
+          lastM,
+          `Leo Tháp Trận ${ladderMatches.length}/5: ${lastM.result} vs ${lastM.botName} (${lastM.turnsCount} nước)`
+        );
+      }
+
+      loadLeaderboard();
+    } catch (err: any) {
+      alert('Lỗi trong tiến trình leo tháp: ' + (err?.message || err));
+    } finally {
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = '⚔️ BẮT ĐẦU LEO THÁP & CƯỚP CỜ (5 BẬC GAUNTLET)';
+      }
+    }
+  }, 50);
+}
+
+/**
+ * Đấu trực tiếp 1-vs-1 với Đương Kim Vua Giữ Cờ (Boss Rush)
+ */
+function handleDirectKingChallenge(): void {
+  const btn = document.getElementById('btnSubmitRank') as HTMLButtonElement | null;
+  const username = editorView.getUsername();
+  const userCode = editorView.getCurrentCode();
+  const currentKing = playhtmlAdapter.getKingState();
+  const rules = playhtmlAdapter.getArenaRules();
+
+  if (store.currentLang !== 'javascript') {
+    alert('Vui lòng chọn ngôn ngữ JavaScript để thách đấu trực tiếp!');
+    return;
+  }
+
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = '👑 Đang đấu trực diện với Vua Giữ Cờ...';
+  }
+
+  setTimeout(() => {
+    try {
+      const match = ClientMatchSimulator.simulateMatch({
+        challenger: { name: username, jsCode: userCode, side: 'RED' },
+        defender: { name: currentKing.kingName, jsCode: currentKing.kingBotCode, side: 'BLUE' },
+        maxTurns: rules.maxTurns
       });
 
       store.currentGauntletMatches = [match];
@@ -836,62 +962,72 @@ function handleSubmitGauntlet(): void {
 
       const banner = document.getElementById('gauntletSummaryBanner');
       if (match.result === 'WIN') {
-        // CƯỚP CỜ THÀNH CÔNG!
         playhtmlAdapter.claimNewKing(username, userCode, currentKing.kingName);
         if (banner) {
           banner.className = 'gauntlet-banner win-card';
           banner.innerHTML = `
-            🎉 <b>CHIẾN THẮNG OANH LIỆT!</b> Bạn đã cướp cờ thành công từ <b>${currentKing.kingName}</b> sau ${match.turnsCount} nước đi!
-            Tên và mã nguồn bot của bạn hiện đã được đưa lên ngôi vị <b>VUA GIỮ CỜ</b> của toàn bộ đấu trường thời gian thực (playhtml)!
+            🎉 <b>CƯỚP CỜ TRỰC TIẾP THÀNH CÔNG!</b> Bạn đã hạ bệ <b>${currentKing.kingName}</b> sau ${match.turnsCount} nước!
+            Bot của bạn đã trở thành VUA GIỮ CỜ mới phát sóng tới toàn bộ người chơi!
           `;
         }
         celebrate();
       } else {
-        // THUA TRẬN
         if (banner) {
           banner.className = 'gauntlet-banner loss-card';
           banner.innerHTML = `
-            💀 <b>CƯỚP CỜ THẤT BẠI!</b> Bạn bị đánh bại bởi <b>${currentKing.kingName}</b> (${match.winReason}).
-            Hãy mở Replay bên phải để phân tích điểm yếu, đọc code của Vua và chỉnh sửa lại thuật toán ở Tab 2 để quay lại phục thù!
+            💀 <b>THÁCH ĐẤU THẤT BẠI:</b> Bị đánh bại bởi <b>${currentKing.kingName}</b> (${match.winReason}).
+            Hãy mở Replay để soi lỗ hổng hoặc chuyển sang chế độ Leo Tháp 5 bậc để tích lũy Elo!
           `;
         }
       }
 
-      const grid = document.getElementById('gauntletMatchesGrid');
-      if (grid) {
-        const cardClass = match.result === 'WIN' ? 'win-card' : 'loss-card';
-        grid.innerHTML = `
-          <div class="match-card ${cardClass}" onclick="loadLastGauntletReplay()">
-            <div class="match-card-top">
-              <span>👑 Trận Cướp Cờ: vs ${currentKing.kingName}</span>
-              <span class="res-pill res-${match.result}">${match.result}</span>
-            </div>
-            <div class="match-card-metrics">
-              Kết quả: <b>${match.result}</b> • Lý do: <b>${match.winReason}</b> • Thời gian: <b>${match.execTimeMs}ms</b>
-            </div>
-          </div>
-        `;
-      }
-
-      loadMatchIntoReplay(
-        match,
-        `Trận Đấu Cướp Cờ: ${match.result} vs ${currentKing.kingName} (${match.turnsCount} nước • ${match.execTimeMs}ms)`
-      );
+      renderGauntletMatchesGrid([match], [{ tier: 'Chung Kết Trực Tiếp', name: currentKing.kingName }]);
+      loadMatchIntoReplay(match, `Trận Boss Rush: ${match.result} vs ${currentKing.kingName}`);
       loadLeaderboard();
     } catch (err: any) {
-      alert('Lỗi trong trận thách đấu cướp cờ: ' + (err?.message || err));
+      alert('Lỗi thách đấu trực tiếp: ' + (err?.message || err));
     } finally {
       if (btn) {
         btn.disabled = false;
-        btn.textContent = '⚔️ THÁCH ĐẤU CƯỚP CỜ NGAY (VS VUA HIỆN TẠI)';
+        btn.textContent = '⚔️ BẮT ĐẦU LEO THÁP & CƯỚP CỜ (5 BẬC GAUNTLET)';
       }
     }
-  }, 50);
+  }, 40);
+}
+
+function renderGauntletMatchesGrid(matches: MatchSummary[], stages: any[]): void {
+  const grid = document.getElementById('gauntletMatchesGrid');
+  if (!grid) return;
+  grid.innerHTML = '';
+
+  matches.forEach((m, idx) => {
+    const stage = stages[idx] || { tier: `Bậc ${idx + 1}` };
+    const cardClass = m.result === 'WIN' ? 'win-card' : 'loss-card';
+    const card = document.createElement('div');
+    card.className = `match-card ${cardClass}`;
+    card.style.cursor = 'pointer';
+    card.innerHTML = `
+      <div class="match-card-top">
+        <span>🗼 <b>Bậc ${idx + 1}/5 [${stage.tier}]:</b> vs ${m.botName}</span>
+        <span class="res-pill res-${m.result}">${m.result}</span>
+      </div>
+      <div class="match-card-metrics">
+        Kết quả: <b>${m.result}</b> • Lý do: <b>${m.winReason}</b> • <b>${m.turnsCount} nước</b> • <b>${m.execTimeMs}ms</b>
+      </div>
+    `;
+    card.onclick = () => {
+      loadMatchIntoReplay(m, `Bậc ${idx + 1} (${stage.tier}): ${m.result} vs ${m.botName}`);
+    };
+    grid.appendChild(card);
+  });
 }
 
 function loadLastGauntletReplay(): void {
-  const m = store.currentGauntletMatches[0];
-  if (m) loadMatchIntoReplay(m, `Trận Cướp Cờ: ${m.result} vs ${m.botName}`);
+  const matches = store.currentGauntletMatches;
+  if (matches.length > 0) {
+    const m = matches[matches.length - 1];
+    loadMatchIntoReplay(m, `Trận Cuối Cùng: ${m.result} vs ${m.botName}`);
+  }
 }
 
 /**
@@ -946,8 +1082,19 @@ function updateKingDisplayCard(): void {
   if (previewLang) previewLang.textContent = store.currentLang.toUpperCase();
 }
 
+/* ========================================================================== */
+/* CÁC CHỨC NĂNG QUẢN TRỊ VIÊN (ADMIN DASHBOARD)                              */
+/* ========================================================================== */
+
 function openAdminModal(): void {
   document.getElementById('adminModalBackdrop')?.classList.add('active');
+  const rules = playhtmlAdapter.getArenaRules();
+  const turnsIn = document.getElementById('adminMaxTurnsInput') as HTMLInputElement | null;
+  const timeoutIn = document.getElementById('adminMoveTimeoutSelect') as HTMLSelectElement | null;
+  const condIn = document.getElementById('adminWinConditionSelect') as HTMLSelectElement | null;
+  if (turnsIn) turnsIn.value = String(rules.maxTurns);
+  if (timeoutIn) timeoutIn.value = String(rules.timeoutMs);
+  if (condIn) condIn.value = rules.winCondition;
 }
 
 function closeAdminModal(): void {
@@ -961,9 +1108,49 @@ function closeAdminModalOnBackdrop(e: MouseEvent): void {
 }
 
 function saveAdminRules(): void {
+  const pin = (document.getElementById('adminPinInput') as HTMLInputElement)?.value || '';
   const maxTurns = Number((document.getElementById('adminMaxTurnsInput') as HTMLInputElement)?.value || 160);
-  alert(`Đã áp dụng luật thi đấu: Số lượt tối đa mỗi trận = ${maxTurns}!`);
-  closeAdminModal();
+  const timeoutMs = Number((document.getElementById('adminMoveTimeoutSelect') as HTMLSelectElement)?.value || 100);
+  const winCondition = (document.getElementById('adminWinConditionSelect') as HTMLSelectElement)?.value || 'BASE_CAPTURE';
+
+  const res = playhtmlAdapter.adminUpdateRules(pin, { maxTurns, timeoutMs, winCondition });
+  alert(res.message);
+  if (res.success) closeAdminModal();
+}
+
+function handleAdminResetArena(): void {
+  const pin = (document.getElementById('adminPinInput') as HTMLInputElement)?.value || '';
+  if (!confirm('Bạn có chắc chắn muốn RESET toàn bộ Đấu trường, Bảng xếp hạng và Vua cờ về dữ liệu mặc định ban đầu không?')) return;
+  const res = playhtmlAdapter.adminResetArena(pin);
+  alert(res.message);
+  if (res.success) {
+    updateKingDisplayCard();
+    loadLeaderboard();
+    closeAdminModal();
+  }
+}
+
+function handleAdminRemovePlayer(): void {
+  const pin = (document.getElementById('adminPinInput') as HTMLInputElement)?.value || '';
+  const targetUser = prompt('Nhập chính xác Username người chơi cần xóa khỏi Bảng Vàng (chống gian lận):');
+  if (!targetUser) return;
+  const res = playhtmlAdapter.adminRemovePlayer(pin, targetUser);
+  alert(res.message);
+  if (res.success) {
+    loadLeaderboard();
+  }
+}
+
+function handleExportMasterDb(): void {
+  const data = playhtmlAdapter.getMasterDbExport();
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `master_arena_db_${Date.now()}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  celebrate();
 }
 
 function onUsernameChange(val: string): void {
@@ -1012,6 +1199,7 @@ Object.assign(window as any, {
   resetTemplateForCurrentLang: () => editorView.resetTemplateForCurrentLang(),
   handleRunTestMatch,
   handleSubmitGauntlet,
+  handleDirectKingChallenge,
   handleShareChallenge,
   viewKingCode,
   loadLastGauntletReplay,
@@ -1024,6 +1212,9 @@ Object.assign(window as any, {
   closeAdminModal,
   closeAdminModalOnBackdrop,
   saveAdminRules,
+  handleAdminResetArena,
+  handleAdminRemovePlayer,
+  handleExportMasterDb,
   onUsernameChange,
   initPlayhtmlSync: () => playhtmlAdapter.setupPlayhtmlSync()
 });
