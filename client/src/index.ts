@@ -1,8 +1,6 @@
-import { AuthService } from './adapters/authService';
-import { ServerArena } from './application/serverArena';
+import { PlayhtmlAdapter } from './adapters/playhtmlAdapter';
 import { ArenaStore, MainTabId } from './application/arenaStore';
 import { ReplayController } from './application/replayController';
-import { UserProfile } from './domain/authTypes';
 import {
   canCapture,
   cloneGrid,
@@ -11,24 +9,30 @@ import {
   getPieceSide,
   rcToCoord
 } from './domain/boardModel';
-import { chooseClientBotMove, getLegalMovesForSide } from './domain/clientBots';
+import { chooseClientBotMove, CLIENT_BOT_PROFILES, getLegalMovesForSide } from './domain/clientBots';
+import { ClientMatchSimulator } from './domain/clientSimulator';
+import { STARTER_TEMPLATES } from './domain/starterTemplates';
 import { LegalTargetHint, MatchSummary, ReplayFrame, Side, SupportedLanguage } from './domain/types';
 import { BoardView } from './presentation/boardView';
 import { EditorView } from './presentation/editorView';
 import { LeaderboardView } from './presentation/leaderboardView';
 
-const authService = new AuthService();
+const playhtmlAdapter = new PlayhtmlAdapter();
 const store = new ArenaStore();
 const boardView = new BoardView();
 const editorView = new EditorView(store);
 const leaderboardView = new LeaderboardView();
 
-function celebrate(): void { (window as any).confetti?.({ particleCount: 80 }); }
-const serverArena = new ServerArena(store, authService, editorView, leaderboardView, loadMatchIntoReplay, switchMainTab, clearReplay);
-
 let clientBotTestMatches: MatchSummary[] = [];
 let currentActiveMatch: MatchSummary | null = null;
 
+function celebrate(): void {
+  playhtmlAdapter.triggerConfetti();
+}
+
+/**
+ * Xử lý tương tác click ô trên bàn cờ
+ */
 function handleCellClick(r: number, c: number): void {
   if (store.boardMode === 'manual') {
     handleManualCellClick(r, c);
@@ -36,6 +40,9 @@ function handleCellClick(r: number, c: number): void {
   inspectUnitAt(r, c);
 }
 
+/**
+ * Hiển thị HUD phân tích chi tiết quân cờ (Unit Inspector)
+ */
 function inspectUnitAt(r: number, c: number): void {
   const piece = store.currentBoard[r][c];
   const hud = document.getElementById('unitInspectorCard');
@@ -129,6 +136,9 @@ function closeUnitInspector(): void {
   });
 }
 
+/**
+ * Hiển thị các điểm sự kiện quan trọng (ăn quân, thắng trận) trên thanh Scrubber
+ */
 function renderTimelineMarkers(match: MatchSummary): void {
   const track = document.getElementById('timelineMarkersTrack');
   if (!track) return;
@@ -165,6 +175,9 @@ function renderTimelineMarkers(match: MatchSummary): void {
   track.appendChild(winMarker);
 }
 
+/**
+ * Vẽ biểu đồ Telemetry số lượng quân cờ biến thiên qua từng lượt (SVG)
+ */
 function renderMatchTelemetry(match: MatchSummary): void {
   const container = document.getElementById('telemetryChartContainer');
   const statsRow = document.getElementById('telemetryStatsRow');
@@ -282,49 +295,54 @@ function clearDebugConsole(): void {
 }
 
 function logMatchToConsole(match: MatchSummary): void {
-  const playerName = authService.getCurrentUser()?.username || 'Player';
-  appendDebugLog(`[INIT] Running MIT Local Scrimmage vs ${match.botName}...`, 'system');
-  appendDebugLog(`[CONFIG] User: ${playerName} (${match.userSide}) | Opponent: ${match.botName} | Turns: ${match.turnsCount}`, 'info');
+  const playerName = editorView.getUsername();
+  appendDebugLog(`[INIT] Bắt đầu mô phỏng trận đối kháng vs ${match.botName}...`, 'system');
+  appendDebugLog(`[CONFIG] Người chơi: ${playerName} (${match.userSide}) | Đối thủ: ${match.botName} | Số nước: ${match.turnsCount}`, 'info');
 
   const moves = match.moves || [];
   const sampleMoves = moves.slice(0, 6);
   sampleMoves.forEach(m => {
     const act = m.actor === 'USER' ? 'USR' : 'BOT';
     const cap = m.captured ? ` -> ĂN QUÂN [${m.captured}]` : '';
-    appendDebugLog(`[Turn ${m.turn.toString().padStart(2, '0')}] ${m.side} (${act}): ${m.piece} ${m.from} -> ${m.to}${cap}`, m.captured ? 'warn' : 'info');
+    appendDebugLog(`[Lượt ${m.turn.toString().padStart(2, '0')}] ${m.side} (${act}): ${m.piece} ${m.from} -> ${m.to}${cap}`, m.captured ? 'warn' : 'info');
   });
 
   if (moves.length > 6) {
-    appendDebugLog(`[STREAM] ... [${moves.length - 6} turns omitted for brevity] ...`, 'info');
+    appendDebugLog(`[STREAM] ... [Đã ẩn ${moves.length - 6} nước đi ở giữa] ...`, 'info');
     const lastM = moves[moves.length - 1];
-    appendDebugLog(`[Turn ${lastM.turn}] Final Move: ${lastM.side} ${lastM.piece} ${lastM.from} -> ${lastM.to}`, 'info');
+    appendDebugLog(`[Lượt ${lastM.turn}] Nước cuối: ${lastM.side} ${lastM.piece} ${lastM.from} -> ${lastM.to}`, 'info');
   }
 
   if (match.result === 'WIN') {
-    appendDebugLog(`[VICTORY] Match won by ${playerName} in ${match.turnsCount} turns (${match.winReason})! Benchmark: ${match.execTimeMs}ms`, 'success');
+    appendDebugLog(`[VICTORY] Chiến thắng dành cho ${playerName} trong ${match.turnsCount} nước (${match.winReason})! Benchmark: ${match.execTimeMs}ms`, 'success');
   } else {
-    appendDebugLog(`[DEFEAT] Match finished in ${match.result} (${match.winReason}). Benchmark: ${match.execTimeMs}ms`, 'warn');
+    appendDebugLog(`[DEFEAT] Kết quả trận đấu: ${match.result} (${match.winReason}). Benchmark: ${match.execTimeMs}ms`, 'warn');
   }
 }
 
 function exportMatchReplayJson(): void {
-  if (!currentActiveMatch) {
-    alert('Chưa có dữ liệu ván đấu để xuất replay. Hãy chạy test đối kháng trước!');
+  downloadMatchLog();
+}
+
+function downloadMatchLog(): void {
+  const match = currentActiveMatch || store.currentGauntletMatches[0];
+  if (!match) {
+    alert('Chưa có dữ liệu trận đấu để tải log. Hãy chạy test hoặc thách đấu trước!');
     return;
   }
   const payload = {
-    competition: 'MIT Battlecode 9x9 AI Arena',
-    version: '2.0.0-mit',
+    arena: 'RPS Chess 9x9 CTF AI Arena (playhtml Serverless)',
+    version: '2.0.0-serverless',
     exportedAt: new Date().toISOString(),
-    match: currentActiveMatch,
+    match,
     framesCount: replayController.getStatesCount()
   };
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  const playerName = authService.getCurrentUser()?.username || 'player';
-  a.download = `mit_battlecode_${playerName}_vs_${currentActiveMatch.botName}_${Date.now()}.json`;
+  const playerName = editorView.getUsername();
+  a.download = `ctf_arena_${playerName}_vs_${match.botName.replace(/[^a-zA-Z0-9_-]/g, '_')}_${Date.now()}.json`;
   a.click();
   URL.revokeObjectURL(url);
   celebrate();
@@ -400,9 +418,9 @@ function toggleReplayPlay(): void {
 /**
  * Chuyển đổi giữa 4 Tab chính:
  *  - 'practice'    : Tab 1 (Đấu Tập Tay & Luật Chơi)
- *  - 'studio'      : Tab 2 (Phòng Lab Code & Chạy thử bot)
- *  - 'ladder'      : Tab 3 (Đấu xếp hạng trên máy chủ)
- *  - 'leaderboard' : Tab 4 (Bảng xếp hạng và lịch sử bài nộp)
+ *  - 'studio'      : Tab 2 (Phòng Lab Code & Test 4 Bot Client)
+ *  - 'ladder'      : Tab 3 (Đấu Trường Cướp Cờ CTF Realtime playhtml)
+ *  - 'leaderboard' : Tab 4 (Bảng Vàng & Lịch Sử Cướp Cờ)
  */
 function switchMainTab(tabId: MainTabId): void {
   store.activeMainTab = tabId;
@@ -434,12 +452,12 @@ function switchMainTab(tabId: MainTabId): void {
   } else if (tabId === 'studio') {
     const host = document.getElementById('boardHostStudio');
     if (host && sharedBoard) host.appendChild(sharedBoard);
-    if (boardTitle) boardTitle.textContent = '🎬 Replay Kết Quả Chạy Thử Bot';
+    if (boardTitle) boardTitle.textContent = '🎬 Replay Kết Quả Test Với 4 Bot Client';
     switchBoardMode('replay', true);
   } else if (tabId === 'ladder') {
     const host = document.getElementById('boardHostLadder');
     if (host && sharedBoard) host.appendChild(sharedBoard);
-    if (boardTitle) boardTitle.textContent = '⚔️ Replay Trận Đấu Xếp Hạng';
+    if (boardTitle) boardTitle.textContent = '⚔️ Replay Trận Đấu Cướp Cờ Realtime CTF';
     const previewUser = document.getElementById('ladderPreviewUser');
     const previewLang = document.getElementById('ladderPreviewLang');
     if (previewUser) previewUser.textContent = editorView.getUsername();
@@ -482,12 +500,12 @@ function loadMatchIntoReplay(match: MatchSummary, titleLabel = ''): void {
   const blueName = document.getElementById('bluePlayerName');
   if (redName) {
     redName.textContent = userIsRed
-      ? `👤 CODE CỦA BẠN (RED - Đi trước)`
+      ? `👤 ${editorView.getUsername()} (RED - Đi trước)`
       : `🤖 ${match.botName} (RED - Đi trước)`;
   }
   if (blueName) {
     blueName.textContent = !userIsRed
-      ? `👤 CODE CỦA BẠN (BLUE - Đi sau)`
+      ? `👤 ${editorView.getUsername()} (BLUE - Đi sau)`
       : `🤖 ${match.botName} (BLUE - Đi sau)`;
   }
 
@@ -535,10 +553,11 @@ function switchBoardMode(mode: 'replay' | 'manual', resetIfNeeded = true): void 
         board: store.initialBoardTemplate,
         boardMode: 'replay',
         selectedRC: null,
-        legalTargets: []
+        legalTargets: [],
+        onCellClick: handleCellClick
       });
       const summary = document.getElementById('matchSummaryTag');
-      if (summary) summary.textContent = '🎬 Sẵn sàng phát Replay (Bấm Chạy Test để xem)';
+      if (summary) summary.textContent = '🎬 Sẵn sàng phát Replay (Bấm Chạy Thử Bot để xem)';
       const redName = document.getElementById('redPlayerName');
       const blueName = document.getElementById('bluePlayerName');
       if (redName) redName.textContent = '👤 BẠN (PHE ĐỎ - Đi trước)';
@@ -571,7 +590,7 @@ function resetManualGame(): void {
     boardMode: 'manual',
     selectedRC: store.manualSelectedRC,
     legalTargets: store.manualLegalTargets,
-    onCellClick: handleManualCellClick
+    onCellClick: handleCellClick
   });
 }
 
@@ -606,7 +625,7 @@ function handleManualCellClick(r: number, c: number): void {
       boardMode: 'manual',
       selectedRC: null,
       legalTargets: [],
-      onCellClick: handleManualCellClick
+      onCellClick: handleCellClick
     });
 
     if (r === 0 && c === 8) {
@@ -653,7 +672,7 @@ function handleManualCellClick(r: number, c: number): void {
         boardMode: 'manual',
         selectedRC: null,
         legalTargets: [],
-        onCellClick: handleManualCellClick
+        onCellClick: handleCellClick
       });
 
       if (botMove.toR === 8 && botMove.toC === 0) {
@@ -689,92 +708,250 @@ function handleManualCellClick(r: number, c: number): void {
     boardMode: 'manual',
     selectedRC: store.manualSelectedRC,
     legalTargets: store.manualLegalTargets,
-    onCellClick: handleManualCellClick
+    onCellClick: handleCellClick
   });
 }
 
 /**
- * Các thao tác thi đấu được xử lý qua API máy chủ.
+ * Chạy thử bot trực tiếp trong trình duyệt (100% Client-Side)
  */
-function handleRunTestMatch(): void { void serverArena.runTest(); }
-function handleSubmitGauntlet(): void { void serverArena.submit(); }
-function loadLeaderboard(): void { void serverArena.refresh(); }
-function downloadMatchLog(): void { serverArena.downloadLog(); }
+function handleRunTestMatch(): void {
+  const btn = document.getElementById('btnTestMatch') as HTMLButtonElement | null;
+  const botSelect = document.getElementById('testBotSelect') as HTMLSelectElement | null;
+  const sideSelect = document.getElementById('testSideSelect') as HTMLSelectElement | null;
+  const selectedBotLevel = Number(botSelect?.value ?? 0);
+  const userSide: Side = sideSelect?.value === 'BLUE' ? 'BLUE' : 'RED';
+  const userCode = editorView.getCurrentCode();
 
-function renderAuthHeader(user: UserProfile | null): void {
-  const container = document.getElementById('authHeaderSection');
-  const gateScreen = document.getElementById('authGatewayScreen');
-  const arenaContainer = document.getElementById('arenaAppContainer');
-  const topbarNav = document.getElementById('mainNavTabs') || (document.querySelector('.main-nav-tabs') as HTMLElement | null);
-
-  if (!user) {
-    switchGateAuthTab('login');
-    document.querySelectorAll<HTMLInputElement>('input[type="password"]').forEach(input => { input.value = ''; });
-    if (gateScreen) gateScreen.classList.remove('hidden');
-    if (arenaContainer) arenaContainer.classList.add('hidden');
-    if (topbarNav) topbarNav.style.display = 'none';
-
-    if (container) {
-      container.innerHTML = `
-        <div class="topbar-guest-tag">🔒 Vui lòng đăng nhập để mở khóa</div>
-      `;
-    }
-  } else {
-    if (gateScreen) gateScreen.classList.add('hidden');
-    if (arenaContainer) arenaContainer.classList.remove('hidden');
-    if (topbarNav) topbarNav.style.display = 'flex';
-
-    const roleBadge = user.role === 'ADMIN'
-      ? '<span class="badge-role role-admin">👑 ADMIN</span>'
-      : '<span class="badge-role role-user">👤 PLAYER</span>';
-
-    const adminBtn = user.role === 'ADMIN'
-      ? '<button class="btn-admin-config" onclick="openAdminModal()" title="Tùy chỉnh luật đấu trường">⚙️ Tùy Chỉnh Luật</button>'
-      : '';
-
-    if (container) {
-      container.innerHTML = `
-        <div class="user-profile-badge">
-          <div class="user-avatar-circle">${user.role === 'ADMIN' ? '👑' : '👤'}</div>
-          <div class="user-info-text">
-            <span class="user-name-title">${user.username}</span>
-            <span style="font-size:11px; color:#94a3b8;">${roleBadge}</span>
-          </div>
-          ${adminBtn}
-          <button class="btn-mini" onclick="handleLogout()" title="Đăng xuất">🚪 Thoát</button>
-        </div>
-      `;
-    }
-
-    const userInput = document.getElementById('usernameInput') as HTMLInputElement | null;
-    if (userInput) { userInput.value = user.username; userInput.readOnly = true; }
-    const ladderPreviewUser = document.getElementById('ladderPreviewUser');
-    if (ladderPreviewUser) ladderPreviewUser.textContent = user.username;
+  if (store.currentLang !== 'javascript') {
+    alert('Đấu trường đang chạy chế độ 100% Client-Side trên GitHub Pages. Vui lòng chọn tab ngôn ngữ JavaScript để chạy thử trực tiếp trong trình duyệt!');
+    return;
   }
+
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = '⏳ Đang mô phỏng trận đấu...';
+  }
+  document.getElementById('errorAlertBox')?.classList.add('hidden');
+
+  setTimeout(() => {
+    try {
+      const botsToTest =
+        selectedBotLevel === 0
+          ? CLIENT_BOT_PROFILES
+          : CLIENT_BOT_PROFILES.filter(b => b.level === selectedBotLevel);
+
+      const results: MatchSummary[] = [];
+
+      botsToTest.forEach(bot => {
+        const match = ClientMatchSimulator.simulateMatch({
+          challenger: {
+            name: editorView.getUsername(),
+            jsCode: userCode,
+            side: userSide
+          },
+          defender: {
+            name: bot.name,
+            level: bot.level,
+            side: userSide === 'RED' ? 'BLUE' : 'RED'
+          }
+        });
+        results.push(match);
+      });
+
+      clientBotTestMatches = results;
+      const badge = document.getElementById('botTestCountBadge');
+      if (badge) badge.textContent = String(results.length);
+
+      leaderboardView.renderClientBotTestResults(results, idx => {
+        const m = results[idx];
+        if (m) {
+          loadMatchIntoReplay(
+            m,
+            `Test Bot Client: ${m.result} vs ${m.botName} (${m.turnsCount} nước • ${m.execTimeMs}ms)`
+          );
+        }
+      });
+
+      if (results.length > 0) {
+        const first = results[0];
+        loadMatchIntoReplay(
+          first,
+          `Test Bot Client: ${first.result} vs ${first.botName} (${first.turnsCount} nước • ${first.execTimeMs}ms)`
+        );
+      }
+    } catch (err: any) {
+      const alertBox = document.getElementById('errorAlertBox');
+      if (alertBox) {
+        alertBox.textContent = `Lỗi thực thi bot: ${err?.message || err}`;
+        alertBox.classList.remove('hidden');
+      }
+    } finally {
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = '🧪 Chạy Thử Bot (4 Cấp Độ)';
+      }
+    }
+  }, 40);
+}
+
+/**
+ * Thách đấu cướp cờ Đương Kim Vua Giữ Cờ (Realtime playhtml CTF)
+ */
+function handleSubmitGauntlet(): void {
+  const btn = document.getElementById('btnSubmitRank') as HTMLButtonElement | null;
+  const username = editorView.getUsername();
+  const userCode = editorView.getCurrentCode();
+  const currentKing = playhtmlAdapter.getKingState();
+
+  if (store.currentLang !== 'javascript') {
+    alert('Để thách đấu cướp cờ trong chế độ Serverless, mã nguồn bot của bạn phải viết bằng JavaScript để các người chơi khác có thể nạp và đối đầu!');
+    return;
+  }
+
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = '⚔️ Đang đấu cướp cờ với Đương Kim Vua...';
+  }
+  document.getElementById('errorAlertBox')?.classList.add('hidden');
+
+  setTimeout(() => {
+    try {
+      const match = ClientMatchSimulator.simulateMatch({
+        challenger: {
+          name: username,
+          jsCode: userCode,
+          side: 'RED'
+        },
+        defender: {
+          name: currentKing.kingName,
+          jsCode: currentKing.kingBotCode,
+          side: 'BLUE'
+        }
+      });
+
+      store.currentGauntletMatches = [match];
+      const countBadge = document.getElementById('gauntletCountBadge');
+      if (countBadge) countBadge.textContent = '1';
+
+      const banner = document.getElementById('gauntletSummaryBanner');
+      if (match.result === 'WIN') {
+        // CƯỚP CỜ THÀNH CÔNG!
+        playhtmlAdapter.claimNewKing(username, userCode, currentKing.kingName);
+        if (banner) {
+          banner.className = 'gauntlet-banner win-card';
+          banner.innerHTML = `
+            🎉 <b>CHIẾN THẮNG OANH LIỆT!</b> Bạn đã cướp cờ thành công từ <b>${currentKing.kingName}</b> sau ${match.turnsCount} nước đi!
+            Tên và mã nguồn bot của bạn hiện đã được đưa lên ngôi vị <b>VUA GIỮ CỜ</b> của toàn bộ đấu trường thời gian thực (playhtml)!
+          `;
+        }
+        celebrate();
+      } else {
+        // THUA TRẬN
+        if (banner) {
+          banner.className = 'gauntlet-banner loss-card';
+          banner.innerHTML = `
+            💀 <b>CƯỚP CỜ THẤT BẠI!</b> Bạn bị đánh bại bởi <b>${currentKing.kingName}</b> (${match.winReason}).
+            Hãy mở Replay bên phải để phân tích điểm yếu, đọc code của Vua và chỉnh sửa lại thuật toán ở Tab 2 để quay lại phục thù!
+          `;
+        }
+      }
+
+      const grid = document.getElementById('gauntletMatchesGrid');
+      if (grid) {
+        const cardClass = match.result === 'WIN' ? 'win-card' : 'loss-card';
+        grid.innerHTML = `
+          <div class="match-card ${cardClass}" onclick="loadLastGauntletReplay()">
+            <div class="match-card-top">
+              <span>👑 Trận Cướp Cờ: vs ${currentKing.kingName}</span>
+              <span class="res-pill res-${match.result}">${match.result}</span>
+            </div>
+            <div class="match-card-metrics">
+              Kết quả: <b>${match.result}</b> • Lý do: <b>${match.winReason}</b> • Thời gian: <b>${match.execTimeMs}ms</b>
+            </div>
+          </div>
+        `;
+      }
+
+      loadMatchIntoReplay(
+        match,
+        `Trận Đấu Cướp Cờ: ${match.result} vs ${currentKing.kingName} (${match.turnsCount} nước • ${match.execTimeMs}ms)`
+      );
+      loadLeaderboard();
+    } catch (err: any) {
+      alert('Lỗi trong trận thách đấu cướp cờ: ' + (err?.message || err));
+    } finally {
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = '⚔️ THÁCH ĐẤU CƯỚP CỜ NGAY (VS VUA HIỆN TẠI)';
+      }
+    }
+  }, 50);
+}
+
+function loadLastGauntletReplay(): void {
+  const m = store.currentGauntletMatches[0];
+  if (m) loadMatchIntoReplay(m, `Trận Cướp Cờ: ${m.result} vs ${m.botName}`);
+}
+
+/**
+ * Tạo link chia sẻ thách đấu để gửi cho bạn bè (nén bot bằng LZ-String)
+ */
+function handleShareChallenge(): void {
+  const username = editorView.getUsername();
+  const code = editorView.getCurrentCode();
+  const url = playhtmlAdapter.generateShareableUrl(username, code);
+
+  navigator.clipboard.writeText(url).then(() => {
+    alert(
+      `🔗 ĐÃ SAO CHÉP LINK THÁCH ĐẤU VÀO CLIPBOARD!\n\nHãy gửi đường link này cho bạn bè. Khi họ mở link, bot của bạn sẽ lập tức trở thành Boss giữ cờ trên máy của họ để họ thử sức cướp cờ!`
+    );
+  }).catch(() => {
+    prompt('Link thách đấu của bạn:', url);
+  });
+}
+
+/**
+ * Nạp code của Vua hiện tại vào Editor để phân tích
+ */
+function viewKingCode(): void {
+  const king = playhtmlAdapter.getKingState();
+  const editor = document.getElementById('codeEditor') as HTMLTextAreaElement | null;
+  if (editor && king.kingBotCode) {
+    if (confirm(`Bạn có muốn nạp mã nguồn Bot của Vua [${king.kingName}] vào Editor để đọc và phân tích điểm yếu không?`)) {
+      editor.value = king.kingBotCode;
+      store.userDraftByLang['javascript'] = king.kingBotCode;
+      switchMainTab('studio');
+    }
+  }
+}
+
+function loadLeaderboard(): void {
+  const entries = playhtmlAdapter.getHallOfFame();
+  leaderboardView.renderLeaderboardTable(entries, editorView.getUsername());
+}
+
+function updateKingDisplayCard(): void {
+  const king = playhtmlAdapter.getKingState();
+  const nameEl = document.getElementById('kingNameDisplay');
+  const timeEl = document.getElementById('kingTimeDisplay');
+  const eloEl = document.getElementById('kingEloDisplay');
+  const previewUser = document.getElementById('ladderPreviewUser');
+  const previewLang = document.getElementById('ladderPreviewLang');
+
+  if (nameEl) nameEl.textContent = king.kingName;
+  if (timeEl) timeEl.textContent = king.capturedAt;
+  if (eloEl) eloEl.textContent = String(king.kingElo);
+  if (previewUser) previewUser.textContent = editorView.getUsername();
+  if (previewLang) previewLang.textContent = store.currentLang.toUpperCase();
 }
 
 function openAdminModal(): void {
-  const modal = document.getElementById('adminModalBackdrop');
-  if (modal) {
-    const turnsInput = document.getElementById('adminMaxTurnsInput') as HTMLInputElement | null;
-    if (turnsInput) {
-      turnsInput.value = localStorage.getItem('rps_admin_max_turns') || '160';
-    }
-    const timeoutSelect = document.getElementById('adminMoveTimeoutSelect') as HTMLSelectElement | null;
-    if (timeoutSelect) {
-      timeoutSelect.value = localStorage.getItem('rps_admin_timeout') || '100';
-    }
-    const winSelect = document.getElementById('adminWinConditionSelect') as HTMLSelectElement | null;
-    if (winSelect) {
-      winSelect.value = localStorage.getItem('rps_admin_win_condition') || 'BASE_CAPTURE';
-    }
-    modal.classList.add('open');
-  }
+  document.getElementById('adminModalBackdrop')?.classList.add('active');
 }
 
 function closeAdminModal(): void {
-  const modal = document.getElementById('adminModalBackdrop');
-  if (modal) modal.classList.remove('open');
+  document.getElementById('adminModalBackdrop')?.classList.remove('active');
 }
 
 function closeAdminModalOnBackdrop(e: MouseEvent): void {
@@ -784,187 +961,17 @@ function closeAdminModalOnBackdrop(e: MouseEvent): void {
 }
 
 function saveAdminRules(): void {
-  const turnsInput = document.getElementById('adminMaxTurnsInput') as HTMLInputElement | null;
-  const timeoutSelect = document.getElementById('adminMoveTimeoutSelect') as HTMLSelectElement | null;
-  const winSelect = document.getElementById('adminWinConditionSelect') as HTMLSelectElement | null;
-
-  const turns = turnsInput?.value ? parseInt(turnsInput.value, 10) : 160;
-  localStorage.setItem('rps_admin_max_turns', turns.toString());
-  if (timeoutSelect) localStorage.setItem('rps_admin_timeout', timeoutSelect.value);
-  if (winSelect) localStorage.setItem('rps_admin_win_condition', winSelect.value);
-
-  celebrate();
-  alert(`✅ Đã lưu cấu hình luật chơi Admin thành công!\n• Max Turns: ${turns}\n• Timeout: ${timeoutSelect?.value || 100}ms\n• Ưu tiên: ${winSelect?.value === 'BASE_CAPTURE' ? 'Chiếm căn cứ' : 'Diệt hết quân'}`);
+  const maxTurns = Number((document.getElementById('adminMaxTurnsInput') as HTMLInputElement)?.value || 160);
+  alert(`Đã áp dụng luật thi đấu: Số lượt tối đa mỗi trận = ${maxTurns}!`);
   closeAdminModal();
 }
 
-function switchGateAuthTab(tab: 'login' | 'register'): void {
-  const isLogin = tab === 'login';
-  document.getElementById('gateTabLogin')?.classList.toggle('active', isLogin);
-  document.getElementById('gateTabRegister')?.classList.toggle('active', !isLogin);
-  document.getElementById('gateFormLogin')?.classList.toggle('hidden', !isLogin);
-  document.getElementById('gateFormRegister')?.classList.toggle('hidden', isLogin);
-  document.getElementById('gateAlertBox')?.classList.add('hidden');
-}
-
-function showGateAlert(msg: string): void {
-  const alertEl = document.getElementById('gateAlertBox');
-  if (alertEl) {
-    alertEl.textContent = msg;
-    alertEl.classList.remove('hidden');
-  }
-}
-
-async function handleGateLoginSubmit(e: Event): Promise<void> {
-  e.preventDefault();
-  const idInput = document.getElementById('gateLoginId') as HTMLInputElement | null;
-  const passInput = document.getElementById('gateLoginPass') as HTMLInputElement | null;
-  const btn = document.getElementById('btnGateSubmitLogin') as HTMLButtonElement | null;
-
-  if (!idInput || !passInput) return;
-  if (btn) {
-    btn.disabled = true;
-    btn.textContent = '⏳ Đang xác thực...';
-  }
-
-  const res = await authService.login(idInput.value, passInput.value);
-  if (btn) {
-    btn.disabled = false;
-    btn.textContent = 'Vào Đấu Trường Chơi Ngay →';
-  }
-
-  if (res.success && res.user) {
-    celebrate();
-  } else {
-    showGateAlert(res.error || 'Đăng nhập thất bại!');
-  }
-}
-
-async function handleGateRegisterSubmit(e: Event): Promise<void> {
-  e.preventDefault();
-  const userInput = document.getElementById('gateRegUser') as HTMLInputElement | null;
-  const emailInput = document.getElementById('gateRegEmail') as HTMLInputElement | null;
-  const passInput = document.getElementById('gateRegPass') as HTMLInputElement | null;
-  const btn = document.getElementById('btnGateSubmitRegister') as HTMLButtonElement | null;
-
-  if (!userInput || !emailInput || !passInput) return;
-  if (btn) {
-    btn.disabled = true;
-    btn.textContent = '⏳ Đang tạo tài khoản...';
-  }
-
-  const res = await authService.register(userInput.value, emailInput.value, passInput.value);
-  if (btn) {
-    btn.disabled = false;
-    btn.textContent = 'Tạo Tài Khoản & Vào Chơi →';
-  }
-
-  if (res.success && res.user) {
-    celebrate();
-  } else {
-    showGateAlert(res.error || 'Đăng ký thất bại!');
-  }
-}
-
-function openAuthModal(tab: 'login' | 'register' = 'login'): void {
-  const modal = document.getElementById('authModalBackdrop');
-  if (modal) modal.classList.add('open');
-  switchAuthTab(tab);
-  hideAuthAlert();
-}
-
-function closeAuthModal(): void {
-  const modal = document.getElementById('authModalBackdrop');
-  if (modal) modal.classList.remove('open');
-  hideAuthAlert();
-}
-
-function closeAuthModalOnBackdrop(e: MouseEvent): void {
-  if ((e.target as HTMLElement).id === 'authModalBackdrop') {
-    closeAuthModal();
-  }
-}
-
-function switchAuthTab(tab: 'login' | 'register'): void {
-  const isLogin = tab === 'login';
-  document.getElementById('tabBtnLogin')?.classList.toggle('active', isLogin);
-  document.getElementById('tabBtnRegister')?.classList.toggle('active', !isLogin);
-  document.getElementById('formLogin')?.classList.toggle('hidden', !isLogin);
-  document.getElementById('formRegister')?.classList.toggle('hidden', isLogin);
-  hideAuthAlert();
-}
-
-function showAuthAlert(msg: string): void {
-  const alertEl = document.getElementById('authAlertBox');
-  if (alertEl) {
-    alertEl.textContent = msg;
-    alertEl.classList.remove('hidden');
-  }
-}
-
-function hideAuthAlert(): void {
-  document.getElementById('authAlertBox')?.classList.add('hidden');
-}
-
-async function handleLoginSubmit(e: Event): Promise<void> {
-  e.preventDefault();
-  const idInput = document.getElementById('loginIdentifier') as HTMLInputElement | null;
-  const passInput = document.getElementById('loginPassword') as HTMLInputElement | null;
-  const btn = document.getElementById('btnSubmitLogin') as HTMLButtonElement | null;
-
-  if (!idInput || !passInput) return;
-  if (btn) {
-    btn.disabled = true;
-    btn.textContent = '⏳ Đang xác thực...';
-  }
-
-  const res = await authService.login(idInput.value, passInput.value);
-  if (btn) {
-    btn.disabled = false;
-    btn.textContent = 'Đăng Nhập Vào Đấu Trường';
-  }
-
-  if (res.success && res.user) {
-    closeAuthModal();
-    celebrate();
-    alert(`🎉 Đăng nhập thành công! Chào mừng ${res.user.role === 'ADMIN' ? 'Quản trị viên' : 'người chơi'} [${res.user.username}].`);
-  } else {
-    showAuthAlert(res.error || 'Đăng nhập thất bại!');
-  }
-}
-
-async function handleRegisterSubmit(e: Event): Promise<void> {
-  e.preventDefault();
-  const userInput = document.getElementById('regUsername') as HTMLInputElement | null;
-  const emailInput = document.getElementById('regEmail') as HTMLInputElement | null;
-  const passInput = document.getElementById('regPassword') as HTMLInputElement | null;
-  const btn = document.getElementById('btnSubmitRegister') as HTMLButtonElement | null;
-
-  if (!userInput || !emailInput || !passInput) return;
-  if (btn) {
-    btn.disabled = true;
-    btn.textContent = '⏳ Đang tạo tài khoản...';
-  }
-
-  const res = await authService.register(userInput.value, emailInput.value, passInput.value);
-  if (btn) {
-    btn.disabled = false;
-    btn.textContent = 'Tạo Tài Khoản Mới';
-  }
-
-  if (res.success && res.user) {
-    closeAuthModal();
-    celebrate();
-    alert(`🎉 Đăng ký tài khoản thành công! Bạn hiện đang đăng nhập với vai trò [${res.user.role}].`);
-  } else {
-    showAuthAlert(res.error || 'Đăng ký thất bại!');
-  }
-}
-
-async function handleLogout(): Promise<void> {
-  if (confirm('Bạn có chắc chắn muốn đăng xuất khỏi tài khoản này?')) {
-    try { await authService.logout(); } catch (error) { showAuthAlert((error as Error).message); alert((error as Error).message); }
-  }
+function onUsernameChange(val: string): void {
+  try {
+    localStorage.setItem('rps_player_nickname', val.trim());
+  } catch (_) {}
+  updateKingDisplayCard();
+  loadLeaderboard();
 }
 
 // Gắn các hàm toàn cục cho HTML gọi
@@ -997,74 +1004,54 @@ Object.assign(window as any, {
   },
   updateReplaySpeed: (ms: string) =>
     replayController.setSpeed(Number(ms), setPlayPauseButtonState),
-  selectLanguage: (lang: SupportedLanguage) => editorView.selectLanguage(lang),
+  selectLanguage: (lang: SupportedLanguage) => {
+    editorView.selectLanguage(lang);
+    const previewLang = document.getElementById('ladderPreviewLang');
+    if (previewLang) previewLang.textContent = lang.toUpperCase();
+  },
   resetTemplateForCurrentLang: () => editorView.resetTemplateForCurrentLang(),
   handleRunTestMatch,
   handleSubmitGauntlet,
-  downloadMatchLog,
+  handleShareChallenge,
+  viewKingCode,
+  loadLastGauntletReplay,
   loadLeaderboard,
-  openAuthModal,
-  closeAuthModal,
-  closeAuthModalOnBackdrop,
-  switchAuthTab,
-  handleLoginSubmit,
-  handleRegisterSubmit,
-  handleLogout,
-  switchGateAuthTab,
-  handleGateLoginSubmit,
-  handleGateRegisterSubmit,
+  downloadMatchLog,
+  exportMatchReplayJson,
+  closeUnitInspector,
+  clearDebugConsole,
   openAdminModal,
   closeAdminModal,
   closeAdminModalOnBackdrop,
   saveAdminRules,
-  closeUnitInspector,
-  clearDebugConsole,
-  exportMatchReplayJson
+  onUsernameChange,
+  initPlayhtmlSync: () => playhtmlAdapter.setupPlayhtmlSync()
 });
 
-window.addEventListener('keydown', (e: KeyboardEvent) => {
-  const target = e.target as HTMLElement;
-  if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT')) {
-    return;
-  }
-
-  if (e.code === 'Space') {
-    e.preventDefault();
-    toggleReplayPlay();
-  } else if (e.code === 'ArrowLeft') {
-    e.preventDefault();
-    setPlayPauseButtonState(false);
-    replayController.prev();
-  } else if (e.code === 'ArrowRight') {
-    e.preventDefault();
-    setPlayPauseButtonState(false);
-    replayController.next();
-  } else if (e.code === 'Home') {
-    e.preventDefault();
-    setPlayPauseButtonState(false);
-    replayController.first();
-  } else if (e.code === 'End') {
-    e.preventDefault();
-    setPlayPauseButtonState(false);
-    replayController.last();
-  } else if (e.code === 'Escape') {
-    closeUnitInspector();
-  }
-});
-
-async function bootstrapClient(): Promise<void> {
+function bootstrapClient(): void {
   boardView.renderCoordHeaders();
   editorView.bindTabIndentation();
-  authService.onAuthStateChanged(user => {
-    renderAuthHeader(user);
-    if (user) { void serverArena.refresh(); }
-    else {
-      replayController.stop();
-      serverArena.clearPrivateState();
-    }
+
+  store.initialBoardTemplate = ClientMatchSimulator.INITIAL_BOARD;
+  store.templatesByLang = { ...STARTER_TEMPLATES } as any;
+  store.userDraftByLang = { ...STARTER_TEMPLATES } as any;
+  store.currentBoard = cloneGrid(ClientMatchSimulator.INITIAL_BOARD);
+
+  try {
+    const savedName = localStorage.getItem('rps_player_nickname');
+    const input = document.getElementById('usernameInput') as HTMLInputElement | null;
+    if (savedName && input) input.value = savedName;
+  } catch (_) {}
+
+  playhtmlAdapter.onKingStateChange(() => {
+    updateKingDisplayCard();
+    loadLeaderboard();
   });
+
+  editorView.selectLanguage('javascript');
   switchMainTab('studio');
-  await serverArena.initialize();
-  try { await authService.restoreSession(); } catch { /* The login form remains available. */ }
+  updateKingDisplayCard();
+  loadLeaderboard();
 }
-void bootstrapClient();
+
+bootstrapClient();

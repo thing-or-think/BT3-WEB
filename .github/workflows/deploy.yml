@@ -36,10 +36,8 @@ jobs:
       - name: Build client bundle
         run: npm run build:client
 
-      - name: Prepare public files and backend connection
+      - name: Prepare public files for GitHub Pages (Serverless CTF)
         run: node scripts/prepare-pages.cjs
-        env:
-          ARENA_API_BASE_URL: ${{ vars.ARENA_API_BASE_URL }}
 
       - name: Setup Pages
         uses: actions/configure-pages@v5

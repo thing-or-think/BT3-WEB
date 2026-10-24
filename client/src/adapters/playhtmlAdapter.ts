@@ -38,7 +38,7 @@ export class PlayhtmlAdapter {
     } catch (_) {}
   }
 
-  private setupPlayhtmlSync(): void {
+  public setupPlayhtmlSync(): void {
     // Nếu playhtml đã được nhúng qua unpkg / window
     const w = window as any;
     if (w.playhtml) {

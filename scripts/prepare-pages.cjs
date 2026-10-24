@@ -9,4 +9,5 @@ for (const name of ['index.html', 'styles', 'dist']) {
   fs.cpSync(path.join('client', name), path.join(target, name), { recursive: true });
 }
 fs.writeFileSync(path.join(target, 'config.js'), `window.ARENA_API_BASE_URL = ${JSON.stringify(base)};\n`);
-if (!base) console.warn('ARENA_API_BASE_URL is not configured; deployed Pages will show a connection message until a backend is configured.');
+fs.writeFileSync(path.join(target, '.nojekyll'), '');
+console.log('GitHub Pages site prepared successfully for pure client-side / playhtml serverless CTF arena.');

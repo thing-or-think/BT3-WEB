@@ -1,42 +1,52 @@
-# RPS Chess 9x9 — Đấu trường lập trình AI
+# RPS Chess 9x9 — Đấu Trường Lập Trình AI (GitHub Pages Serverless CTF & playhtml)
 
-Trang web thi đấu AI trên bàn cờ Đấm – Lá – Kéo 9×9. Người chơi viết bot bằng Python, Java hoặc C++, chạy thử chiến thuật và nộp code để thi đấu xếp hạng.
+Đấu trường AI thi đấu trên bàn cờ Đấm – Lá – Kéo 9×9. 
+Hệ thống được thiết kế theo kiến trúc **Serverless 100% Client-Side** vận hành trực tiếp trên **GitHub Pages**, kết hợp **playhtml** để đồng bộ thời gian thực trạng thái **Vua Giữ Cờ (CTF King of the Hill)** và bảng vàng vinh danh mà **hoàn toàn không cần API server backend**.
 
-## Cách khởi chạy
+---
 
-### Chuẩn bị
+## Tính Năng Nổi Bật
 
-- Cài Node.js 20 trở lên và npm.
-- Cài môi trường cho ngôn ngữ muốn dùng: Python 3, Java JDK hoặc G++ hỗ trợ C++17.
-- Đảm bảo các lệnh tương ứng (`python`, `java`, `javac`, `g++`) có thể chạy trong terminal.
+1. **100% Serverless trên GitHub Pages**:
+   - Chạy trực tiếp từ trình duyệt, chi phí 0đ, không lo sập máy chủ.
+   - Biên dịch và mô phỏng trận đấu 160 lượt bằng JavaScript Engine nội tại cực nhanh (< 20ms).
+2. **Đấu Trường Cướp Cờ CTF (King of the Hill) với `playhtml`**:
+   - Vua Giữ Cờ ngự trị đỉnh tháp, phát sóng trực tiếp tới toàn bộ người chơi qua `playhtml`.
+   - Người chơi đọc mã nguồn của Vua, viết bot counter và thách đấu cướp cờ.
+   - Thắng trận sẽ lập tức **Cướp cờ thành công**, kích hoạt pháo hoa ăn mừng và đưa bot lên ngôi Vua mới!
+3. **Chia sẻ Thách Đấu Viral qua URL Hash**:
+   - Sử dụng thuật toán nén `LZ-String` để đóng gói mã nguồn bot vào liên kết `#boss=...&code=...`. Gửi link cho bạn bè là họ có thể đấu ngay với bot của bạn.
+4. **MIT Battlecode UI**:
+   - **Unit Inspector HUD**: Click vào bất kỳ quân cờ nào để xem thông số, hệ khắc chế, khoảng cách tới căn cứ địch và các hướng di chuyển hợp lệ.
+   - **Match Telemetry Chart**: Biểu đồ trực quan hóa số lượng quân cờ biến thiên qua từng lượt.
+   - **Debug Terminal**: Console mô phỏng dòng sự kiện và phân tích ván đấu theo thời gian thực.
+   - **Replay Scrubber & Controller**: Xem lại từng nước đi, tua nhanh/chậm hoặc nhảy trực tiếp tới các pha ăn quân.
 
-### Chạy trang web
+---
 
-Mở terminal tại thư mục dự án và chạy:
+## 4 Tab Trải Nghiệm Chính
 
+- **Tab 1: 🎮 Đấu Tập & Luật Chơi**: Học luật cờ, chơi trực tiếp bằng tay với bot ở 4 cấp độ (Tập sự → Đại sư).
+- **Tab 2: 💻 Bot Studio & Console**: Soạn thảo thuật toán bot (JavaScript), chạy thử đối đầu 4 bot và phân tích hiệu năng.
+- **Tab 3: ⚔️ Đấu Trường Cướp Cờ CTF**: Thách đấu Vua Giữ Cờ realtime `playhtml`, xem code của Vua để tìm lỗ hổng, hoặc copy link bot gửi bạn bè.
+- **Tab 4: 🏆 Bảng Vàng Hall of Fame**: Bục vinh danh Top 3 và bảng vàng lịch sử cướp cờ được lưu trữ bền vững.
+
+---
+
+## Cách Khởi Chạy & Triển Khai
+
+### 1. Chạy Cục Bộ (Local Development)
 ```bash
+# Cài đặt phụ thuộc
 npm ci
-npm start
+
+# Build client bundle
+npm run build:client
+
+# Mở tệp client/index.html trực tiếp trên trình duyệt hoặc chạy HTTP server
+npx serve client
 ```
 
-Truy cập **http://localhost:3000** trên trình duyệt.
-
-Những lần sau chỉ cần chạy `npm start`. Để dừng trang web, nhấn `Ctrl + C` trong terminal.
-
-## Nội dung trang web
-
-- **Đăng ký, đăng nhập:** tạo tài khoản để tham gia thi đấu và lưu lịch sử bài nộp.
-- **Đấu tập và luật chơi:** tìm hiểu luật cờ, chơi trực tiếp với bot ở 4 cấp độ.
-- **Phòng Lab Code:** chọn Python, Java hoặc C++, chỉnh sửa code mẫu và chạy thử với bot trước khi thi đấu.
-- **Đấu xếp hạng:** nộp bot để đấu với các đối thủ từ cuối bảng lên trên; thắng thì tiếp tục leo hạng, thua thì dừng dưới đối thủ.
-- **Bảng xếp hạng:** xem thứ hạng, điểm và kết quả của người chơi.
-- **Lịch sử bài nộp:** xem lại các lần nộp code, kết quả thi đấu và lỗi biên dịch.
-- **Replay và log:** xem lại từng nước đi, điều chỉnh tốc độ phát và tải log trận đấu dạng JSON.
-
-## Bắt đầu thi đấu
-
-1. Đăng ký tài khoản và đăng nhập.
-2. Vào **Phòng Lab Code**, chọn ngôn ngữ và viết bot.
-3. Nhấn **Chạy thử bot** để kiểm tra chiến thuật.
-4. Chuyển sang **Đấu xếp hạng** và nhấn **Nộp bot đấu xếp hạng**.
-5. Xem kết quả, bảng xếp hạng và replay để cải thiện bot cho lần thi đấu tiếp theo.
+### 2. Triển Khai Lên GitHub Pages
+Dự án đã tích hợp sẵn GitHub Actions workflow tại [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml):
+Mỗi khi push mã nguồn lên nhánh `main`, hệ thống sẽ tự động đóng gói client và xuất bản lên GitHub Pages tĩnh hoàn toàn miễn phí.

@@ -3,53 +3,64 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>RPS Chess 9x9 — MIT Battlecode AI Arena</title>
+  <title>RPS Chess 9x9 AI Arena — Serverless CTF &amp; Realtime playhtml</title>
   <link rel="stylesheet" href="./styles/main.css" />
+  <link rel="stylesheet" href="https://unpkg.com/playhtml@latest/dist/style.css" />
   <script src="https://cdn.jsdelivr.net/npm/lz-string@1.5.0/libs/lz-string.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
-  <script src="./config.js"></script>
+  <script type="module">
+    import { playhtml } from "https://unpkg.com/playhtml@latest/dist/playhtml.es.js";
+    window.playhtml = playhtml;
+    if (typeof window.initPlayhtmlSync === 'function') {
+      window.initPlayhtmlSync();
+    }
+  </script>
 </head>
 <body>
   <!-- HEADER & THANH ĐIỀU HƯỚNG 4 TAB CHÍNH -->
   <header class="topbar">
     <div class="brand">
-      <div class="brand-logo">🏛️</div>
+      <div class="brand-logo">⚔️</div>
       <div class="brand-text">
         <div class="brand-title-row">
-          <h1>MIT BATTLECODE 9x9</h1>
-          <span class="brand-tag">AI ARENA 2026</span>
+          <h1>RPS CHESS 9x9</h1>
+          <span class="brand-tag">CTF AI ARENA</span>
         </div>
-        <p>Nộp bot Python / Java / C++ • Thi đấu, lưu kết quả &amp; replay</p>
+        <p>100% Client-Side trên GitHub Pages • Realtime playhtml &amp; CTF Cướp Cờ</p>
       </div>
     </div>
 
-    <!-- 4 TABS CHÍNH - ẨN MẶC ĐỊNH CHO ĐẾN KHI ĐĂNG NHẬP -->
-    <nav id="mainNavTabs" class="main-nav-tabs" style="display: none;">
+    <!-- 4 TABS CHÍNH -->
+    <nav id="mainNavTabs" class="main-nav-tabs">
       <button class="main-tab-btn" data-maintab="practice" onclick="switchMainTab('practice')">
-        <span class="tab-step">1</span> 🎮 Sandbox Practice
+        <span class="tab-step">1</span> 🎮 Đấu Tập &amp; Luật
       </button>
       <button class="main-tab-btn active" data-maintab="studio" onclick="switchMainTab('studio')">
         <span class="tab-step">2</span> 💻 Bot Studio &amp; Console
       </button>
       <button class="main-tab-btn" data-maintab="ladder" onclick="switchMainTab('ladder')">
-        <span class="tab-step">3</span> ⚔️ Đấu Xếp Hạng
+        <span class="tab-step">3</span> ⚔️ Đấu Trường Cướp Cờ CTF
       </button>
       <button class="main-tab-btn" data-maintab="leaderboard" onclick="switchMainTab('leaderboard')">
-        <span class="tab-step">4</span> 🏆 Xếp Hạng &amp; Bài Nộp
+        <span class="tab-step">4</span> 🏆 Bảng Vàng Hall of Fame
       </button>
     </nav>
 
-    <!-- KHU VỰC TÀI KHOẢN ĐĂNG NHẬP / PROFILE BADGE -->
+    <!-- KHU VỰC TÀI KHOẢN / NICKNAME -->
     <div id="authHeaderSection" class="auth-header-section">
-      <div class="topbar-guest-tag">🔒 Vui lòng đăng nhập để mở khóa</div>
+      <div class="user-profile-badge" style="gap:8px;">
+        <span style="font-size:12px; color:#94a3b8; font-weight:600;">👤 Hacker:</span>
+        <input id="usernameInput" type="text" value="Hacker_BTL03" style="background:#090d15; border:1px solid #1f2a3f; color:#f8fafc; border-radius:4px; padding:3px 8px; font-size:12px; font-weight:700; width:130px;" title="Tên người chơi khi cướp cờ" onchange="if(window.onUsernameChange) window.onUsernameChange(this.value)" />
+        <button class="btn-admin-config" onclick="openAdminModal()" title="Tùy chỉnh luật đấu trường">⚙️ Luật</button>
+      </div>
     </div>
   </header>
-  <div id="serverStatus" class="server-status" role="status" aria-live="polite">Đang kết nối máy chủ đấu trường…</div>
+  <div id="serverStatus" class="server-status hidden" style="display:none;" role="status"></div>
 
   <!-- ======================================================================= -->
   <!-- MÀN HÌNH CHÀO MỪNG & BẮT BUỘC ĐĂNG NHẬP / ĐĂNG KÝ (AUTH GATEWAY)         -->
   <!-- ======================================================================= -->
-  <section id="authGatewayScreen" class="auth-gateway-screen">
+  <section id="authGatewayScreen" class="auth-gateway-screen hidden" style="display:none;">
     <div class="gateway-container">
       <!-- CỘT TRÁI: GIỚI THIỆU ĐẤU TRƯỜNG & TÍNH NĂNG NỔI BẬT -->
       <div class="gateway-hero-pane">
@@ -178,7 +189,7 @@
   <!-- ======================================================================= -->
   <!-- TOÀN BỘ KHÔNG GIAN ĐẤU TRƯỜNG (CHỈ MỞ KHÓA SAU KHI ĐĂNG NHẬP)           -->
   <!-- ======================================================================= -->
-  <div id="arenaAppContainer" class="arena-app-container hidden">
+  <div id="arenaAppContainer" class="arena-app-container">
 
   <!-- COMPONENT BÀN CỜ 9x9 DÙNG CHUNG (TỰ ĐỘNG GẮN VÀO TAB ĐANG MỞ) -->
   <div id="sharedBoardSection" class="board-column">
@@ -401,11 +412,14 @@
         <div class="panel editor-panel">
           <div class="editor-header-bar">
             <div class="editor-lang-tabs">
+              <button class="lang-tab active" data-lang="javascript" onclick="selectLanguage('javascript')">
+                ⚡ JavaScript (Client-Side)
+              </button>
               <button class="lang-tab" data-lang="python" onclick="selectLanguage('python')">
-                🐍 Python 3
+                🐍 Python
               </button>
               <button class="lang-tab" data-lang="cpp" onclick="selectLanguage('cpp')">
-                ⚙️ C++ (G++17)
+                ⚙️ C++
               </button>
               <button class="lang-tab" data-lang="java" onclick="selectLanguage('java')">
                 ☕ Java
@@ -418,7 +432,6 @@
             </div>
 
             <div class="editor-top-tools">
-              <input id="usernameInput" type="hidden" value="SinhVien_BTL03" />
               <button class="btn-restore-template" onclick="resetTemplateForCurrentLang()" title="Khôi phục code mẫu chuẩn">
                 ↺ Khôi Phục Mẫu
               </button>
@@ -450,14 +463,14 @@
                 </select>
               </div>
 
-              <button id="btnTestMatch" class="btn-run-sim" onclick="handleRunTestMatch()" disabled>
-                🧪 Chạy thử bot
+              <button id="btnTestMatch" class="btn-run-sim" onclick="handleRunTestMatch()">
+                🧪 Chạy Thử Bot (4 Cấp Độ)
               </button>
             </div>
 
             <div class="action-deck-right">
               <button class="btn-to-ctf" onclick="switchMainTab('ladder')">
-                ⚔️ Sang Đấu Xếp Hạng (Tab 3) →
+                ⚔️ Sang Đấu Trường Cướp Cờ (Tab 3) →
               </button>
             </div>
           </div>
@@ -558,35 +571,41 @@ stdout: b1 b2</pre>
         <div id="flagHolderCard" class="panel ladder-hero-panel" can-play>
           <div class="ladder-hero-info">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-              <h2>⚔️ Đấu Xếp Hạng</h2>
-              <span class="badge-tier tier-gold" style="font-size:12px;">Kết quả từ máy chủ</span>
+              <h2>⚔️ Đấu Trường Cướp Cờ CTF (King of the Hill)</h2>
+              <span class="badge-tier tier-gold" style="font-size:12px;">🟢 Realtime playhtml</span>
             </div>
             <p>
-              Bot của bạn đấu lần lượt với người chơi từ cuối bảng lên trên. Thắng thì leo tiếp; thua thì dừng ngay dưới đối thủ.
-              Mỗi lượt nộp được lưu riêng để xem lại kết quả và tải log.
+              Đấu trường cướp cờ trực tiếp chạy 100% trên GitHub Pages. Người giữ cờ tối thượng nộp mã nguồn bot gác cổng 24/7.
+              Hãy <b>đọc code của Vua</b> để tìm điểm yếu, viết bot counter và <b>thách đấu cướp cờ</b> để ghi danh lên đỉnh bảng!
             </p>
 
             <div class="king-profile-box" style="background:rgba(251,191,36,0.1); border:1px solid rgba(251,191,36,0.3); border-radius:8px; padding:12px; margin:12px 0;">
-              <div style="font-size:16px;">👑 <b>NGƯỜI DẪN ĐẦU:</b> <span id="kingNameDisplay" style="color:#fbbf24; font-weight:700;">Đang tải...</span></div>
+              <div style="font-size:16px;">👑 <b>ĐƯƠNG KIM VUA GIỮ CỜ:</b> <span id="kingNameDisplay" style="color:#fbbf24; font-weight:700;">Đang tải...</span></div>
               <div style="font-size:13px; color:#9ca3af; margin-top:4px;">
-                Cập nhật: <span id="kingTimeDisplay">-</span> • Chỉ số hạng: <b id="kingEloDisplay">-</b>
+                Chiếm cờ lúc: <span id="kingTimeDisplay">-</span> • Hệ số Elo: <b id="kingEloDisplay">-</b>
               </div>
             </div>
 
             <div class="push-meta-bar">
-              <span>👤 Thách đấu với tên: <b id="ladderPreviewUser">SinhVien_BTL03</b></span>
-              <span>💻 Bot thách đấu: <b id="ladderPreviewLang">PYTHON</b></span>
+              <span>👤 Thách đấu với tên: <b id="ladderPreviewUser">Hacker_BTL03</b></span>
+              <span>💻 Bot thách đấu: <b id="ladderPreviewLang">JAVASCRIPT</b></span>
               <button class="btn-outline" onclick="switchMainTab('studio')">✎ Chỉnh Sửa Code</button>
             </div>
           </div>
 
           <div style="display:flex; flex-direction:column; gap:8px; margin-top:14px;">
-            <button id="btnSubmitRank" class="btn-primary btn-large-push" onclick="handleSubmitGauntlet()" disabled>
-              ⚔️ Nộp bot đấu xếp hạng
+            <button id="btnSubmitRank" class="btn-primary btn-large-push" onclick="handleSubmitGauntlet()">
+              ⚔️ THÁCH ĐẤU CƯỚP CỜ NGAY (VS VUA HIỆN TẠI)
             </button>
-            <div style="display:flex; gap:8px;">
-              <button id="btnDownloadLog" class="btn-outline" style="flex:1;" onclick="downloadMatchLog()" disabled>
-                ⬇ Tải log bài nộp đang xem
+            <div style="display:flex; gap:8px; flex-wrap:wrap;">
+              <button class="btn-secondary" style="flex:1; min-width:140px;" onclick="viewKingCode()">
+                👁️ Xem Code Của Vua (Soi Lỗ Hổng)
+              </button>
+              <button class="btn-outline" style="flex:1; min-width:140px;" onclick="handleShareChallenge()">
+                🔗 Sao Chép Link Thách Đấu (Share Bot)
+              </button>
+              <button id="btnDownloadLog" class="btn-outline" style="flex:1; min-width:140px;" onclick="downloadMatchLog()">
+                ⬇ Tải Log Trận Đấu
               </button>
             </div>
           </div>
@@ -594,12 +613,12 @@ stdout: b1 b2</pre>
 
         <div class="panel">
           <div class="panel-title-row">
-            <h3>🗼 Kết Quả Các Trận Đấu</h3>
+            <h3>🗼 Nhật Ký Trận Đấu Cướp Cờ</h3>
             <span class="summary-tag">Trận đấu: <b id="gauntletCountBadge">0</b></span>
           </div>
 
           <div id="gauntletSummaryBanner" class="gauntlet-banner">
-            Nộp bot để thi đấu, hoặc mở một bài nộp cũ từ tab Xếp hạng &amp; Bài nộp.
+            Chưa có trận cướp cờ nào trong phiên này. Hãy bấm <b>"⚔️ THÁCH ĐẤU CƯỚP CỜ NGAY"</b> để so tài với Vua hiện tại!
           </div>
 
           <!-- Sơ đồ trận đấu -->
@@ -624,14 +643,14 @@ stdout: b1 b2</pre>
       <div class="panel">
         <div class="leaderboard-filter-bar">
           <div>
-            <h2 class="section-heading">🏆 Bảng Xếp Hạng</h2>
+            <h2 class="section-heading">🏆 Bảng Vàng Vinh Danh &amp; Lịch Sử Cướp Cờ</h2>
             <p class="section-sub">
-              Kết quả được lưu trên máy chủ và tải lại sau mỗi lượt nộp.
+              Dữ liệu được đồng bộ trực tiếp thời gian thực qua <b>playhtml</b> và lưu trữ bền vững.
             </p>
           </div>
           <div style="display:flex; gap:8px;">
             <button class="btn-mini" onclick="loadLeaderboard()">🔄 Tải lại dữ liệu</button>
-            <button class="btn-primary" onclick="switchMainTab('ladder')">⚔️ Nộp Bot Thi Đấu</button>
+            <button class="btn-primary" onclick="switchMainTab('ladder')">⚔️ Vào Đấu Cướp Cờ Ngay</button>
           </div>
         </div>
 
@@ -642,11 +661,11 @@ stdout: b1 b2</pre>
                 <th>Hạng</th>
                 <th>Người chơi</th>
                 <th>Ngôn ngữ</th>
-                <th>Điểm</th>
-                <th>Chỉ số hạng</th>
+                <th>Điểm Cướp Cờ</th>
+                <th>Hệ số Elo</th>
                 <th>Trạng thái Danh hiệu</th>
                 <th>Số trận thắng</th>
-                <th>Thời gian chạy</th>
+                <th>Thời gian tính toán</th>
               </tr>
             </thead>
             <tbody id="leaderboardBody"></tbody>
@@ -655,11 +674,6 @@ stdout: b1 b2</pre>
       </div>
     </div>
   </main>
-  <section class="panel submission-history-panel">
-    <h3>📚 Bài nộp của tôi</h3>
-    <p>Mỗi lượt nộp là một phiên bản riêng. Mở kết quả để xem replay và tải log.</p>
-    <div id="submissionHistory"></div>
-  </section>
   </div> <!-- /arenaAppContainer -->
 
   <!-- MODAL ĐĂNG KÝ / ĐĂNG NHẬP -->
