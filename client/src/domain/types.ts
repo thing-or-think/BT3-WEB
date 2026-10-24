@@ -1,5 +1,5 @@
 export type Side = 'RED' | 'BLUE';
-export type CellChar = '.' | 'R' | 'P' | 'S' | 'r' | 'p' | 's';
+export type CellChar = '.' | 'R' | 'P' | 'S' | 'r' | 'p' | 's' | '#';
 export type SupportedLanguage = 'javascript' | 'python' | 'cpp' | 'java';
 
 export interface MoveRecord {
@@ -18,6 +18,7 @@ export interface MatchSummary {
   botLevel: number;
   botName: string;
   botElo: number;
+  userName?: string;
   userSide: Side;
   result: string;
   winnerSide: Side | null;

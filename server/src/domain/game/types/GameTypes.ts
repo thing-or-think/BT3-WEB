@@ -1,6 +1,6 @@
 export type Side = 'RED' | 'BLUE';
 export type PieceType = 'R' | 'P' | 'S';
-export type CellChar = '.' | 'R' | 'P' | 'S' | 'r' | 'p' | 's';
+export type CellChar = '.' | 'R' | 'P' | 'S' | 'r' | 'p' | 's' | '#';
 export type SupportedLanguage = 'python' | 'cpp' | 'java';
 export type MatchOutcome = 'WIN' | 'LOSS' | 'DRAW' | 'TLE' | 'RE' | 'INVALID_MOVE';
 export type WinReason = 'BASE_CAPTURE' | 'NO_MOVES' | 'TIMEOUT' | 'RUNTIME_ERROR' | 'INVALID_MOVE' | 'MAX_TURNS';

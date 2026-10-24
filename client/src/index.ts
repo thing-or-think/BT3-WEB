@@ -9,13 +9,12 @@ import {
   computeRedLegalTargets,
   DIRS,
   getPieceSide,
-  LegalTargetHint,
   rcToCoord
 } from './domain/boardModel';
 import { chooseClientBotMove, CLIENT_BOT_PROFILES, getLegalMovesForSide } from './domain/clientBots';
 import { ClientMatchSimulator } from './domain/clientSimulator';
 import { STARTER_TEMPLATES } from './domain/starterTemplates';
-import { MatchSummary, ReplayFrame, Side, SupportedLanguage } from './domain/types';
+import { LegalTargetHint, MatchSummary, ReplayFrame, Side, SupportedLanguage } from './domain/types';
 import { BoardView } from './presentation/boardView';
 import { EditorView } from './presentation/editorView';
 import { LeaderboardView } from './presentation/leaderboardView';
@@ -283,8 +282,9 @@ function clearDebugConsole(): void {
 }
 
 function logMatchToConsole(match: MatchSummary): void {
+  const challengerName = match.userName || editorView.getUsername();
   appendDebugLog(`[INIT] Running MIT Local Scrimmage vs ${match.botName}...`, 'system');
-  appendDebugLog(`[CONFIG] User: ${match.userName} (${match.userSide}) | Opponent: ${match.botName} | Turns: ${match.turnsCount}`, 'info');
+  appendDebugLog(`[CONFIG] User: ${challengerName} (${match.userSide}) | Opponent: ${match.botName} | Turns: ${match.turnsCount}`, 'info');
 
   const moves = match.moves || [];
   const sampleMoves = moves.slice(0, 6);
@@ -301,7 +301,7 @@ function logMatchToConsole(match: MatchSummary): void {
   }
 
   if (match.result === 'WIN') {
-    appendDebugLog(`[VICTORY] Match won by ${match.userName} in ${match.turnsCount} turns (${match.winReason})! Benchmark: ${match.execTimeMs}ms`, 'success');
+    appendDebugLog(`[VICTORY] Match won by ${challengerName} in ${match.turnsCount} turns (${match.winReason})! Benchmark: ${match.execTimeMs}ms`, 'success');
   } else {
     appendDebugLog(`[DEFEAT] Match finished in ${match.result} (${match.winReason}). Benchmark: ${match.execTimeMs}ms`, 'warn');
   }
@@ -312,6 +312,7 @@ function exportMatchReplayJson(): void {
     alert('Chưa có dữ liệu ván đấu để xuất replay. Hãy chạy test đối kháng trước!');
     return;
   }
+  const challengerName = currentActiveMatch.userName || editorView.getUsername();
   const payload = {
     competition: 'MIT Battlecode 9x9 AI Arena',
     version: '2.0.0-mit',
@@ -323,7 +324,7 @@ function exportMatchReplayJson(): void {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `mit_battlecode_${currentActiveMatch.userName}_vs_${currentActiveMatch.botName}_${Date.now()}.json`;
+  a.download = `mit_battlecode_${challengerName}_vs_${currentActiveMatch.botName}_${Date.now()}.json`;
   a.click();
   URL.revokeObjectURL(url);
   playhtmlAdapter.triggerConfetti();
@@ -671,6 +672,13 @@ function handleManualCellClick(r: number, c: number): void {
  * TAB 2: Chạy Test với 4 Bot hoàn toàn Client-Side trong 0.05 giây!
  */
 function handleRunTestMatch(): void {
+  const currentUser = authService.getCurrentUser();
+  if (!currentUser) {
+    alert('⚠️ Bạn phải đăng nhập tài khoản trước khi chạy kiểm thử bot!');
+    openAuthModal('login');
+    return;
+  }
+
   const btn = document.getElementById('btnTestMatch') as HTMLButtonElement | null;
   const botSelect = document.getElementById('testBotSelect') as HTMLSelectElement | null;
   const sideSelect = document.getElementById('testSideSelect') as HTMLSelectElement | null;
@@ -685,7 +693,7 @@ function handleRunTestMatch(): void {
   document.getElementById('errorAlertBox')?.classList.add('hidden');
 
   try {
-    appendDebugLog(`[LOCAL SCRIMMAGE] Khởi chạy kiểm thử giải thuật với ${selectedBotLevel === 0 ? '4 Bot Client (Lv1 -> Lv4)' : `Bot Lv${selectedBotLevel}`}...`, 'system');
+    appendDebugLog(`[LOCAL SCRIMMAGE] Khởi chạy kiểm thử bot với tài khoản [${currentUser.username}]...`, 'system');
 
     const botsToTest =
       selectedBotLevel === 0
@@ -698,7 +706,7 @@ function handleRunTestMatch(): void {
     botsToTest.forEach(bot => {
       const match = ClientMatchSimulator.simulateMatch({
         challenger: {
-          name: editorView.getUsername(),
+          name: currentUser.username,
           jsCode: userCode,
           side: userSide
         },
@@ -752,8 +760,15 @@ function handleRunTestMatch(): void {
  * TAB 3: THÁCH ĐẤU CƯỚP CỜ CTF (REALTIME KING OF THE HILL)
  */
 function handleSubmitGauntlet(): void {
+  const currentUser = authService.getCurrentUser();
+  if (!currentUser) {
+    alert('⚠️ Bạn chưa đăng nhập! Vui lòng đăng nhập hoặc đăng ký tài khoản trước khi thách đấu cướp cờ.');
+    openAuthModal('login');
+    return;
+  }
+
   const btn = document.getElementById('btnSubmitRank') as HTMLButtonElement | null;
-  const username = editorView.getUsername();
+  const username = currentUser.username;
   const userCode = editorView.getCurrentCode();
   const currentKing = playhtmlAdapter.getKingState();
 
@@ -792,6 +807,8 @@ function handleSubmitGauntlet(): void {
       if (match.result === 'WIN') {
         // CƯỚP CỜ THÀNH CÔNG!
         playhtmlAdapter.claimNewKing(username, userCode, currentKing.kingName);
+        authService.updateUserElo(50);
+        appendDebugLog(`[CTF ARENA] 🎉 [${username}] đã cướp cờ thành công! Điểm ELO được cộng +50 và cập nhật Cookie.`, 'success');
         if (banner) {
           banner.className = 'gauntlet-banner win-card';
           banner.innerHTML = `
@@ -801,6 +818,8 @@ function handleSubmitGauntlet(): void {
         }
       } else {
         // THUA TRẬN
+        authService.updateUserElo(-15);
+        appendDebugLog(`[CTF ARENA] 💀 [${username}] bị đánh bại bởi ${currentKing.kingName}. Điểm Elo trừ 15.`, 'warn');
         if (banner) {
           banner.className = 'gauntlet-banner loss-card';
           banner.innerHTML = `
@@ -880,7 +899,8 @@ function viewKingCode(): void {
 
 function loadLeaderboard(): void {
   const entries = playhtmlAdapter.getHallOfFame();
-  leaderboardView.renderLeaderboardTable(entries, editorView.getUsername());
+  const currentUser = authService.getCurrentUser();
+  leaderboardView.renderLeaderboardTable(entries, currentUser ? currentUser.username : '');
 }
 
 function renderAuthHeader(user: UserProfile | null): void {
@@ -897,6 +917,8 @@ function renderAuthHeader(user: UserProfile | null): void {
     if (container) {
       container.innerHTML = `
         <div class="topbar-guest-tag">🔒 Vui lòng đăng nhập để mở khóa</div>
+        <button class="btn-mini" onclick="openAuthModal('login')" title="Đăng nhập tài khoản">🔑 Đăng Nhập</button>
+        <button class="btn-mini btn-primary" onclick="openAuthModal('register')" title="Tạo tài khoản">✨ Tạo Tài Khoản</button>
       `;
     }
   } else {
@@ -920,17 +942,86 @@ function renderAuthHeader(user: UserProfile | null): void {
             <span class="user-name-title">${user.username}</span>
             <span style="font-size:11px; color:#94a3b8;">${roleBadge} • <b>${user.elo}</b> pts</span>
           </div>
+          <button class="btn-mini btn-cookie-tag" onclick="openCookieModal()" title="Kiểm tra Cookie lưu tài khoản">🍪 Cookie</button>
           ${adminBtn}
-          <button class="btn-mini" onclick="handleLogout()" title="Đăng xuất">🚪 Thoát</button>
+          <button class="btn-mini" onclick="handleLogout()" title="Đăng xuất và xóa Cookie">🚪 Thoát</button>
         </div>
       `;
     }
 
     const userInput = document.getElementById('usernameInput') as HTMLInputElement | null;
-    if (userInput) userInput.value = user.username;
+    if (userInput) {
+      userInput.value = user.username;
+      userInput.setAttribute('readonly', 'true');
+      userInput.setAttribute('disabled', 'true');
+    }
     const ladderPreviewUser = document.getElementById('ladderPreviewUser');
-    if (ladderPreviewUser) ladderPreviewUser.textContent = user.username;
+    if (ladderPreviewUser) {
+      ladderPreviewUser.innerHTML = `<b>${user.username}</b> <span class="badge-cookie-verified" onclick="openCookieModal()" title="Tài khoản đã xác thực từ Cookie">🔒 Cookie</span>`;
+    }
   }
+}
+
+function openCookieModal(): void {
+  const modal = document.getElementById('cookieModalBackdrop');
+  const body = document.getElementById('cookieModalBody');
+  if (!modal || !body) return;
+
+  const rawCookie = document.cookie;
+  const sessionVal = AuthService.getCookie(AuthService.COOKIE_SESSION);
+  const userCookie = AuthService.getCookie(AuthService.COOKIE_USERNAME);
+  const roleCookie = AuthService.getCookie(AuthService.COOKIE_ROLE);
+  const currentUser = authService.getCurrentUser();
+
+  let parsedJson = 'null';
+  if (sessionVal) {
+    try {
+      parsedJson = JSON.stringify(JSON.parse(sessionVal), null, 2);
+    } catch (_) {
+      parsedJson = sessionVal;
+    }
+  }
+
+  body.innerHTML = `
+    <div style="margin-bottom:10px; padding-bottom:8px; border-bottom:1px solid #1e293b;">
+      <span style="color:#60a5fa; font-weight:700;">[1] TÀI KHOẢN HIỆN TẠI TỪ COOKIE:</span>
+      <div style="color:#a7f3d0; margin-top:4px; line-height:1.6;">
+        • Tên người dùng: <b>${currentUser?.username || userCookie || 'Chưa đăng nhập'}</b><br/>
+        • Vai trò (Role): <b>${currentUser?.role || roleCookie || 'None'}</b><br/>
+        • Điểm Elo: <b>${currentUser?.elo || 0} pts</b><br/>
+        • User ID: <code>${currentUser?.id || 'N/A'}</code>
+      </div>
+    </div>
+    <div style="margin-bottom:10px; padding-bottom:8px; border-bottom:1px solid #1e293b;">
+      <span style="color:#60a5fa; font-weight:700;">[2] NỘI DUNG COOKIE "rps_arena_user_session":</span>
+      <pre style="margin:4px 0; color:#fde047; white-space:pre-wrap; background:#040711; padding:8px; border-radius:4px;">${parsedJson}</pre>
+    </div>
+    <div>
+      <span style="color:#60a5fa; font-weight:700;">[3] DOCUMENT.COOKIE NGUYÊN BẢN (TRÌNH DUYỆT):</span>
+      <div style="margin-top:4px; color:#cbd5e1; word-break:break-all; background:#040711; padding:8px; border-radius:4px;">
+        ${rawCookie ? rawCookie : '<i>(Trống - Chưa có Cookie nào được lưu)</i>'}
+      </div>
+    </div>
+  `;
+  modal.classList.add('open');
+}
+
+function closeCookieModal(): void {
+  document.getElementById('cookieModalBackdrop')?.classList.remove('open');
+}
+
+function closeCookieModalOnBackdrop(e: MouseEvent): void {
+  if ((e.target as HTMLElement).id === 'cookieModalBackdrop') {
+    closeCookieModal();
+  }
+}
+
+function copyRawCookie(): void {
+  navigator.clipboard.writeText(document.cookie).then(() => {
+    alert('📋 Đã sao chép document.cookie vào bộ nhớ tạm (Clipboard)!');
+  }).catch(() => {
+    prompt('document.cookie của bạn:', document.cookie);
+  });
 }
 
 function openAdminModal(): void {
@@ -987,8 +1078,16 @@ function switchGateAuthTab(tab: 'login' | 'register'): void {
   document.getElementById('gateAlertBox')?.classList.add('hidden');
 }
 
-function showGateAlert(msg: string): void {
-  const alertEl = document.getElementById('gateAlertBox');
+function showGateAlertLogin(msg: string): void {
+  const alertEl = document.getElementById('gateAlertBoxLogin');
+  if (alertEl) {
+    alertEl.textContent = msg;
+    alertEl.classList.remove('hidden');
+  }
+}
+
+function showGateAlertRegister(msg: string): void {
+  const alertEl = document.getElementById('gateAlertBoxRegister');
   if (alertEl) {
     alertEl.textContent = msg;
     alertEl.classList.remove('hidden');
@@ -997,61 +1096,72 @@ function showGateAlert(msg: string): void {
 
 async function handleGateLoginSubmit(e: Event): Promise<void> {
   e.preventDefault();
-  const idInput = document.getElementById('gateLoginId') as HTMLInputElement | null;
+  const emailInput = (document.getElementById('gateLoginEmail') || document.getElementById('gateLoginId')) as HTMLInputElement | null;
   const passInput = document.getElementById('gateLoginPass') as HTMLInputElement | null;
+  const rememberBox = document.getElementById('gateRememberCookie') as HTMLInputElement | null;
   const btn = document.getElementById('btnGateSubmitLogin') as HTMLButtonElement | null;
 
-  if (!idInput || !passInput) return;
+  if (!emailInput || !passInput) return;
   if (btn) {
     btn.disabled = true;
-    btn.textContent = '⏳ Đang xác thực...';
+    btn.textContent = '⏳ Đang xác thực & lưu Cookie...';
   }
 
-  const res = await authService.login(idInput.value, passInput.value);
+  const remember = rememberBox ? rememberBox.checked : true;
+  const res = await authService.login(emailInput.value, passInput.value, remember);
   if (btn) {
     btn.disabled = false;
-    btn.textContent = 'Vào Đấu Trường Chơi Ngay →';
+    btn.textContent = '🚀 Đăng Nhập Vào Đấu Trường →';
   }
 
   if (res.success && res.user) {
     playhtmlAdapter.triggerConfetti();
+    appendDebugLog(`[AUTH] Đăng nhập thành công: [${res.user.username}] (${res.user.role}) • Đã lưu phiên vào Cookie trình duyệt (7 ngày).`, 'success');
   } else {
-    showGateAlert(res.error || 'Đăng nhập thất bại!');
+    showGateAlertLogin(res.error || 'Đăng nhập thất bại!');
   }
 }
 
 async function handleGateRegisterSubmit(e: Event): Promise<void> {
   e.preventDefault();
-  const userInput = document.getElementById('gateRegUser') as HTMLInputElement | null;
   const emailInput = document.getElementById('gateRegEmail') as HTMLInputElement | null;
   const passInput = document.getElementById('gateRegPass') as HTMLInputElement | null;
-  const roleSelect = document.getElementById('gateRegRole') as HTMLSelectElement | null;
+  const passConfirmInput = document.getElementById('gateRegPassConfirm') as HTMLInputElement | null;
+  const rememberBox = document.getElementById('gateRegRememberCookie') as HTMLInputElement | null;
   const btn = document.getElementById('btnGateSubmitRegister') as HTMLButtonElement | null;
 
-  if (!userInput || !emailInput || !passInput) return;
-  if (btn) {
-    btn.disabled = true;
-    btn.textContent = '⏳ Đang tạo tài khoản...';
+  if (!emailInput || !passInput) return;
+
+  if (passConfirmInput && passInput.value !== passConfirmInput.value) {
+    showGateAlertRegister('Mật khẩu xác nhận không trùng khớp! Vui lòng kiểm tra lại.');
+    return;
   }
 
-  const role = (roleSelect?.value === 'ADMIN' ? 'ADMIN' : 'USER') as any;
-  const res = await authService.register(userInput.value, emailInput.value, passInput.value, role);
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = '⏳ Đang tạo tài khoản & lưu Cookie...';
+  }
+
+  const remember = rememberBox ? rememberBox.checked : true;
+  const res = await authService.register(emailInput.value, passInput.value, passConfirmInput?.value, 'USER', remember);
   if (btn) {
     btn.disabled = false;
-    btn.textContent = 'Tạo Tài Khoản & Vào Chơi →';
+    btn.textContent = '✨ Tạo Tài Khoản & Vào Chơi →';
   }
 
   if (res.success && res.user) {
     playhtmlAdapter.triggerConfetti();
+    appendDebugLog(`[AUTH] Tạo tài khoản mới thành công: [${res.user.username}] (${res.user.role}) • Đã lưu tài khoản vào Cookie.`, 'success');
   } else {
-    showGateAlert(res.error || 'Đăng ký thất bại!');
+    showGateAlertRegister(res.error || 'Tạo tài khoản thất bại!');
   }
 }
 
 async function quickLogin(user: string, pass: string): Promise<void> {
-  const res = await authService.login(user, pass);
+  const res = await authService.login(user, pass, true);
   if (res.success && res.user) {
     playhtmlAdapter.triggerConfetti();
+    appendDebugLog(`[AUTH] ⚡ Đăng nhập nhanh 1-Click: [${res.user.username}] • Đã lưu tài khoản vào Cookie.`, 'success');
   } else {
     alert(res.error || 'Đăng nhập nhanh thất bại');
   }
@@ -1101,15 +1211,17 @@ async function handleLoginSubmit(e: Event): Promise<void> {
   e.preventDefault();
   const idInput = document.getElementById('loginIdentifier') as HTMLInputElement | null;
   const passInput = document.getElementById('loginPassword') as HTMLInputElement | null;
+  const rememberBox = document.getElementById('modalRememberCookie') as HTMLInputElement | null;
   const btn = document.getElementById('btnSubmitLogin') as HTMLButtonElement | null;
 
   if (!idInput || !passInput) return;
   if (btn) {
     btn.disabled = true;
-    btn.textContent = '⏳ Đang xác thực...';
+    btn.textContent = '⏳ Đang xác thực & lưu Cookie...';
   }
 
-  const res = await authService.login(idInput.value, passInput.value);
+  const remember = rememberBox ? rememberBox.checked : true;
+  const res = await authService.login(idInput.value, passInput.value, remember);
   if (btn) {
     btn.disabled = false;
     btn.textContent = 'Đăng Nhập Vào Đấu Trường';
@@ -1118,7 +1230,8 @@ async function handleLoginSubmit(e: Event): Promise<void> {
   if (res.success && res.user) {
     closeAuthModal();
     playhtmlAdapter.triggerConfetti();
-    alert(`🎉 Đăng nhập thành công! Chào mừng ${res.user.role === 'ADMIN' ? 'Quản trị viên' : 'người chơi'} [${res.user.username}].`);
+    appendDebugLog(`[AUTH] Đăng nhập modal thành công: [${res.user.username}] • Đã lưu vào Cookie.`, 'success');
+    alert(`🎉 Đăng nhập thành công! Chào mừng ${res.user.role === 'ADMIN' ? 'Quản trị viên' : 'người chơi'} [${res.user.username}].\n🍪 Phiên làm việc đã được lưu vào Cookie trình duyệt (7 ngày).`);
   } else {
     showAuthAlert(res.error || 'Đăng nhập thất bại!');
   }
@@ -1126,20 +1239,24 @@ async function handleLoginSubmit(e: Event): Promise<void> {
 
 async function handleRegisterSubmit(e: Event): Promise<void> {
   e.preventDefault();
-  const userInput = document.getElementById('regUsername') as HTMLInputElement | null;
-  const emailInput = document.getElementById('regEmail') as HTMLInputElement | null;
+  const emailInput = (document.getElementById('regEmail') || document.getElementById('regUsername')) as HTMLInputElement | null;
   const passInput = document.getElementById('regPassword') as HTMLInputElement | null;
-  const roleSelect = document.getElementById('regRole') as HTMLSelectElement | null;
+  const passConfirmInput = document.getElementById('regPasswordConfirm') as HTMLInputElement | null;
   const btn = document.getElementById('btnSubmitRegister') as HTMLButtonElement | null;
 
-  if (!userInput || !emailInput || !passInput) return;
-  if (btn) {
-    btn.disabled = true;
-    btn.textContent = '⏳ Đang tạo tài khoản...';
+  if (!emailInput || !passInput) return;
+
+  if (passConfirmInput && passInput.value !== passConfirmInput.value) {
+    showAuthAlert('Mật khẩu xác nhận không trùng khớp! Vui lòng kiểm tra lại.');
+    return;
   }
 
-  const role = (roleSelect?.value === 'ADMIN' ? 'ADMIN' : 'USER') as any;
-  const res = await authService.register(userInput.value, emailInput.value, passInput.value, role);
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = '⏳ Đang tạo tài khoản & lưu Cookie...';
+  }
+
+  const res = await authService.register(emailInput.value, passInput.value, passConfirmInput?.value, 'USER', true);
   if (btn) {
     btn.disabled = false;
     btn.textContent = 'Tạo Tài Khoản Mới';
@@ -1148,16 +1265,22 @@ async function handleRegisterSubmit(e: Event): Promise<void> {
   if (res.success && res.user) {
     closeAuthModal();
     playhtmlAdapter.triggerConfetti();
-    alert(`🎉 Đăng ký tài khoản thành công! Bạn hiện đang đăng nhập với vai trò [${res.user.role}].`);
+    appendDebugLog(`[AUTH] Tạo tài khoản modal thành công: [${res.user.username}] • Đã lưu vào Cookie.`, 'success');
+    alert(`🎉 Tạo tài khoản thành công! Bạn đã đăng nhập với tên [${res.user.username}].\n🍪 Phiên làm việc đã được kích hoạt và lưu vào Cookie trình duyệt (7 ngày).`);
   } else {
-    showAuthAlert(res.error || 'Đăng ký thất bại!');
+    showAuthAlert(res.error || 'Tạo tài khoản thất bại!');
   }
 }
 
 function handleLogout(): void {
-  if (confirm('Bạn có chắc chắn muốn đăng xuất khỏi tài khoản này?')) {
+  if (confirm('Bạn có chắc chắn muốn đăng xuất khỏi tài khoản này?\nCookie phiên đăng nhập sẽ được xóa khỏi trình duyệt.')) {
     authService.logout();
+    appendDebugLog('[AUTH] Đã đăng xuất và xóa Cookie phiên tài khoản khỏi trình duyệt.', 'system');
   }
+}
+
+function toggleReplayPlay(): void {
+  replayController.togglePlay(setPlayPauseButtonState);
 }
 
 // Gắn các hàm toàn cục cho HTML gọi
@@ -1175,7 +1298,7 @@ Object.assign(window as any, {
     setPlayPauseButtonState(false);
     replayController.prev();
   },
-  toggleReplayPlay: () => replayController.togglePlay(setPlayPauseButtonState),
+  toggleReplayPlay,
   replayNext: () => {
     setPlayPauseButtonState(false);
     replayController.next();
@@ -1213,6 +1336,10 @@ Object.assign(window as any, {
   closeAdminModal,
   closeAdminModalOnBackdrop,
   saveAdminRules,
+  openCookieModal,
+  closeCookieModal,
+  closeCookieModalOnBackdrop,
+  copyRawCookie,
   closeUnitInspector,
   clearDebugConsole,
   exportMatchReplayJson

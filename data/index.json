@@ -8,35 +8,35 @@
     "elo": 1650,
     "winsCount": 3,
     "stoppedBy": null,
-    "updatedAt": "2026-10-20T10:13:54.138Z",
+    "updatedAt": "2026-10-25T10:26:17.224Z",
     "botFile": "bots/MinhKiet_Top1.py",
     "profileFile": "competitors/user_seed_1.json"
   },
   {
     "rank": 2,
-    "id": "user_6865c570",
+    "id": "user_2d44192a",
     "username": "CaoThu_CPP",
     "bestLanguage": "cpp",
     "bestScore": 1640,
     "elo": 1590,
     "winsCount": 4,
     "stoppedBy": "MinhKiet_Top1",
-    "updatedAt": "2026-10-20T15:14:04.996Z",
+    "updatedAt": "2026-10-25T15:26:28.302Z",
     "botFile": "bots/CaoThu_CPP.cpp",
-    "profileFile": "competitors/user_6865c570.json"
+    "profileFile": "competitors/user_2d44192a.json"
   },
   {
     "rank": 3,
-    "id": "user_513a25cf",
+    "id": "user_9f7ebe11",
     "username": "SinhVien_TrungBinh",
     "bestLanguage": "python",
     "bestScore": 1300,
     "elo": 1590,
     "winsCount": 3,
     "stoppedBy": "MinhKiet_Top1",
-    "updatedAt": "2026-10-20T15:13:57.331Z",
+    "updatedAt": "2026-10-25T15:26:21.274Z",
     "botFile": "bots/SinhVien_TrungBinh.py",
-    "profileFile": "competitors/user_513a25cf.json"
+    "profileFile": "competitors/user_9f7ebe11.json"
   },
   {
     "rank": 4,
@@ -47,7 +47,7 @@
     "elo": 1420,
     "winsCount": 2,
     "stoppedBy": "MinhKiet_Top1",
-    "updatedAt": "2026-10-20T11:13:54.139Z",
+    "updatedAt": "2026-10-25T11:26:17.225Z",
     "botFile": "bots/HoangAnh_Pro.py",
     "profileFile": "competitors/user_seed_2.json"
   },
@@ -60,7 +60,7 @@
     "elo": 1210,
     "winsCount": 1,
     "stoppedBy": "HoangAnh_Pro",
-    "updatedAt": "2026-10-20T13:13:54.139Z",
+    "updatedAt": "2026-10-25T13:26:17.225Z",
     "botFile": "bots/TuanHung_Coder.py",
     "profileFile": "competitors/user_seed_3.json"
   },
@@ -73,7 +73,7 @@
     "elo": 980,
     "winsCount": 0,
     "stoppedBy": "TuanHung_Coder",
-    "updatedAt": "2026-10-20T14:13:54.139Z",
+    "updatedAt": "2026-10-25T14:26:17.225Z",
     "botFile": "bots/BaoNam_Newbie.py",
     "profileFile": "competitors/user_seed_4.json"
   }

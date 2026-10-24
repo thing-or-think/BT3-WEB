@@ -1,0 +1,16 @@
+{
+  "id": "user_354a02c0",
+  "username": "SinhVien_TrungBinh",
+  "isBot": false,
+  "bestLanguage": "python",
+  "bestScore": 1300,
+  "elo": 1590,
+  "highestBotDefeated": 3,
+  "winsCount": 3,
+  "totalMatches": 4,
+  "bestExecTimeMs": 267,
+  "submissionsCount": 1,
+  "updatedAt": "2026-10-25T14:24:56.679Z",
+  "stoppedBy": "MinhKiet_Top1",
+  "botFile": "bots/SinhVien_TrungBinh.py"
+}

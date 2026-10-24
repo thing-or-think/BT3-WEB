@@ -1,0 +1,3784 @@
+{
+  "id": "sub_1792937199831_6c31d5",
+  "userId": "user_f1b67d67",
+  "username": "CaoThu_CPP",
+  "language": "cpp",
+  "sourceCode": "// ============================================================\n// NGÔN NGỮ: C++ (G++ 17/20) | CỜ ĐẤM - LÁ - KÉO 9x9\n// ============================================================\n#include <iostream>\n#include <vector>\n#include <string>\n#include <cmath>\n#include <cctype>\nusing namespace std;\n\nconst int DR[4] = {-1, 1, 0, 0};\nconst int DC[4] = {0, 0, -1, 1};\n\nbool isMyPiece(char ch, const string& side) {\n    if (ch == '.') return false;\n    return side == \"RED\" ? isupper(ch) : islower(ch);\n}\n\nbool isOppPiece(char ch, const string& side) {\n    if (ch == '.') return false;\n    return !isMyPiece(ch, side);\n}\n\nbool canCapture(char a, char d) {\n    char A = toupper(a), D = toupper(d);\n    return (A == 'R' && D == 'S') || (A == 'S' && D == 'P') || (A == 'P' && D == 'R');\n}\n\nstring toCoord(int r, int c) {\n    string s = \"\";\n    s += char('a' + c);\n    s += char('0' + (9 - r));\n    return s;\n}\n\nint main() {\n    ios::sync_with_stdio(false);\n    cin.tie(nullptr);\n\n    string side;\n    int turn, timeLimit;\n    if (!(cin >> side >> turn >> timeLimit)) return 0;\n\n    char board[9][9];\n    for (int r = 0; r < 9; ++r)\n        for (int c = 0; c < 9; ++c)\n            cin >> board[r][c];\n\n    int ownBaseR = (side == \"RED\") ? 8 : 0;\n    int ownBaseC = (side == \"RED\") ? 0 : 8;\n    int targetR  = (side == \"RED\") ? 0 : 8;\n    int targetC  = (side == \"RED\") ? 8 : 0;\n\n    string bestMove = \"\";\n    int bestScore = -1e9;\n\n    for (int r = 0; r < 9; ++r) {\n        for (int c = 0; c < 9; ++c) {\n            char p = board[r][c];\n            if (!isMyPiece(p, side)) continue;\n\n            for (int d = 0; d < 4; ++d) {\n                int nr = r + DR[d], nc = c + DC[d];\n                if (nr < 0 || nr >= 9 || nc < 0 || nc >= 9) continue;\n                if (nr == ownBaseR && nc == ownBaseC) continue;\n\n                char target = board[nr][nc];\n                if (target != '.' && !(isOppPiece(target, side) && canCapture(p, target)))\n                    continue;\n\n                if (nr == targetR && nc == targetC) {\n                    cout << toCoord(r, c) << \" \" << toCoord(nr, nc) << endl;\n                    return 0;\n                }\n\n                int oldDist = abs(r - targetR) + abs(c - targetC);\n                int newDist = abs(nr - targetR) + abs(nc - targetC);\n                int score = (oldDist - newDist) * 28 + (16 - newDist) * 4;\n\n                if (target != '.') score += 120;\n\n                for (int ed = 0; ed < 4; ++ed) {\n                    int ar = nr + DR[ed], ac = nc + DC[ed];\n                    if (ar >= 0 && ar < 9 && ac >= 0 && ac < 9 && !(ar == r && ac == c)) {\n                        char nb = board[ar][ac];\n                        if (isOppPiece(nb, side)) {\n                            if (canCapture(nb, p)) score -= 110;\n                            else if (canCapture(p, nb)) score += 35;\n                        }\n                    }\n                }\n\n                if (score > bestScore) {\n                    bestScore = score;\n                    bestMove = toCoord(r, c) + \" \" + toCoord(nr, nc);\n                }\n            }\n        }\n    }\n\n    if (!bestMove.empty()) {\n        cout << bestMove << endl;\n    }\n    return 0;\n}\n",
+  "status": "COMPLETED",
+  "compileError": null,
+  "totalScore": 1640,
+  "winsCount": 4,
+  "drawsCount": 0,
+  "lossesCount": 1,
+  "highestBotDefeated": 4,
+  "totalTurns": 180,
+  "totalExecTimeMs": 2498,
+  "eloAfter": 1590,
+  "matches": [
+    {
+      "botId": 1,
+      "botLevel": 5,
+      "botName": "[Hạng #5] BaoNam_Newbie (PYTHON)",
+      "botElo": 1200,
+      "userSide": "RED",
+      "result": "WIN",
+      "winnerSide": "RED",
+      "winReason": "BASE_CAPTURE",
+      "errorDetail": null,
+      "turnsCount": 39,
+      "userTurns": 20,
+      "execTimeMs": 556,
+      "score": 300,
+      "moves": [
+        {
+          "turn": 1,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "P",
+          "from": "i2",
+          "to": "i3",
+          "captured": null,
+          "timeMs": 59
+        },
+        {
+          "turn": 2,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "p",
+          "from": "a8",
+          "to": "a9",
+          "captured": null,
+          "timeMs": 47
+        },
+        {
+          "turn": 3,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "P",
+          "from": "i3",
+          "to": "i4",
+          "captured": null,
+          "timeMs": 27
+        },
+        {
+          "turn": 4,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "s",
+          "from": "c8",
+          "to": "c9",
+          "captured": null,
+          "timeMs": 1
+        },
+        {
+          "turn": 5,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "P",
+          "from": "i4",
+          "to": "i5",
+          "captured": null,
+          "timeMs": 25
+        },
+        {
+          "turn": 6,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "r",
+          "from": "e8",
+          "to": "e9",
+          "captured": null,
+          "timeMs": 1
+        },
+        {
+          "turn": 7,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "P",
+          "from": "i5",
+          "to": "i6",
+          "captured": null,
+          "timeMs": 25
+        },
+        {
+          "turn": 8,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "p",
+          "from": "g8",
+          "to": "g9",
+          "captured": null,
+          "timeMs": 1
+        },
+        {
+          "turn": 9,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "S",
+          "from": "g2",
+          "to": "g3",
+          "captured": null,
+          "timeMs": 25
+        },
+        {
+          "turn": 10,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "s",
+          "from": "i8",
+          "to": "i7",
+          "captured": null,
+          "timeMs": 1
+        },
+        {
+          "turn": 11,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "S",
+          "from": "g3",
+          "to": "g4",
+          "captured": null,
+          "timeMs": 26
+        },
+        {
+          "turn": 12,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "s",
+          "from": "i7",
+          "to": "i8",
+          "captured": null,
+          "timeMs": 1
+        },
+        {
+          "turn": 13,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "S",
+          "from": "g4",
+          "to": "g5",
+          "captured": null,
+          "timeMs": 25
+        },
+        {
+          "turn": 14,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "s",
+          "from": "i8",
+          "to": "i7",
+          "captured": null,
+          "timeMs": 1
+        },
+        {
+          "turn": 15,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "S",
+          "from": "g5",
+          "to": "g6",
+          "captured": null,
+          "timeMs": 27
+        },
+        {
+          "turn": 16,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "s",
+          "from": "i7",
+          "to": "i8",
+          "captured": null,
+          "timeMs": 1
+        },
+        {
+          "turn": 17,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "S",
+          "from": "g6",
+          "to": "g7",
+          "captured": null,
+          "timeMs": 29
+        },
+        {
+          "turn": 18,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "s",
+          "from": "i8",
+          "to": "i7",
+          "captured": null,
+          "timeMs": 1
+        },
+        {
+          "turn": 19,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "S",
+          "from": "g7",
+          "to": "g8",
+          "captured": null,
+          "timeMs": 29
+        },
+        {
+          "turn": 20,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "s",
+          "from": "i7",
+          "to": "i8",
+          "captured": null,
+          "timeMs": 1
+        },
+        {
+          "turn": 21,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "S",
+          "from": "g8",
+          "to": "g9",
+          "captured": "p",
+          "timeMs": 26
+        },
+        {
+          "turn": 22,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "s",
+          "from": "i8",
+          "to": "i7",
+          "captured": null,
+          "timeMs": 1
+        },
+        {
+          "turn": 23,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "R",
+          "from": "h1",
+          "to": "h2",
+          "captured": null,
+          "timeMs": 26
+        },
+        {
+          "turn": 24,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "s",
+          "from": "i7",
+          "to": "i8",
+          "captured": null,
+          "timeMs": 1
+        },
+        {
+          "turn": 25,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "R",
+          "from": "h2",
+          "to": "h3",
+          "captured": null,
+          "timeMs": 26
+        },
+        {
+          "turn": 26,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "s",
+          "from": "i8",
+          "to": "i7",
+          "captured": null,
+          "timeMs": 1
+        },
+        {
+          "turn": 27,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "R",
+          "from": "h3",
+          "to": "h4",
+          "captured": null,
+          "timeMs": 26
+        },
+        {
+          "turn": 28,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "s",
+          "from": "i7",
+          "to": "i8",
+          "captured": null,
+          "timeMs": 1
+        },
+        {
+          "turn": 29,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "R",
+          "from": "h4",
+          "to": "h5",
+          "captured": null,
+          "timeMs": 25
+        },
+        {
+          "turn": 30,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "s",
+          "from": "i8",
+          "to": "i7",
+          "captured": null,
+          "timeMs": 1
+        },
+        {
+          "turn": 31,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "R",
+          "from": "h5",
+          "to": "h6",
+          "captured": null,
+          "timeMs": 25
+        },
+        {
+          "turn": 32,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "s",
+          "from": "i7",
+          "to": "i8",
+          "captured": null,
+          "timeMs": 1
+        },
+        {
+          "turn": 33,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "R",
+          "from": "h6",
+          "to": "h7",
+          "captured": null,
+          "timeMs": 25
+        },
+        {
+          "turn": 34,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "s",
+          "from": "i8",
+          "to": "i7",
+          "captured": null,
+          "timeMs": 1
+        },
+        {
+          "turn": 35,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "R",
+          "from": "h7",
+          "to": "i7",
+          "captured": "s",
+          "timeMs": 26
+        },
+        {
+          "turn": 36,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "p",
+          "from": "a9",
+          "to": "a8",
+          "captured": null,
+          "timeMs": 1
+        },
+        {
+          "turn": 37,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "R",
+          "from": "i7",
+          "to": "i8",
+          "captured": null,
+          "timeMs": 27
+        },
+        {
+          "turn": 38,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "p",
+          "from": "a8",
+          "to": "a9",
+          "captured": null,
+          "timeMs": 1
+        },
+        {
+          "turn": 39,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "R",
+          "from": "i8",
+          "to": "i9",
+          "captured": null,
+          "timeMs": 27
+        }
+      ]
+    },
+    {
+      "botId": 2,
+      "botLevel": 4,
+      "botName": "[Hạng #4] TuanHung_Coder (PYTHON)",
+      "botElo": 1200,
+      "userSide": "RED",
+      "result": "WIN",
+      "winnerSide": "RED",
+      "winReason": "BASE_CAPTURE",
+      "errorDetail": null,
+      "turnsCount": 37,
+      "userTurns": 19,
+      "execTimeMs": 515,
+      "score": 300,
+      "moves": [
+        {
+          "turn": 1,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "P",
+          "from": "i2",
+          "to": "i3",
+          "captured": null,
+          "timeMs": 30
+        },
+        {
+          "turn": 2,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "r",
+          "from": "b9",
+          "to": "b8",
+          "captured": null,
+          "timeMs": 43
+        },
+        {
+          "turn": 3,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "P",
+          "from": "i3",
+          "to": "i4",
+          "captured": null,
+          "timeMs": 28
+        },
+        {
+          "turn": 4,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "p",
+          "from": "d9",
+          "to": "d8",
+          "captured": null,
+          "timeMs": 1
+        },
+        {
+          "turn": 5,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "P",
+          "from": "i4",
+          "to": "i5",
+          "captured": null,
+          "timeMs": 29
+        },
+        {
+          "turn": 6,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "s",
+          "from": "f9",
+          "to": "f8",
+          "captured": null,
+          "timeMs": 1
+        },
+        {
+          "turn": 7,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "P",
+          "from": "i5",
+          "to": "i6",
+          "captured": null,
+          "timeMs": 27
+        },
+        {
+          "turn": 8,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "r",
+          "from": "h9",
+          "to": "h8",
+          "captured": null,
+          "timeMs": 1
+        },
+        {
+          "turn": 9,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "S",
+          "from": "g2",
+          "to": "g3",
+          "captured": null,
+          "timeMs": 29
+        },
+        {
+          "turn": 10,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "p",
+          "from": "a8",
+          "to": "a7",
+          "captured": null,
+          "timeMs": 1
+        },
+        {
+          "turn": 11,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "S",
+          "from": "g3",
+          "to": "g4",
+          "captured": null,
+          "timeMs": 28
+        },
+        {
+          "turn": 12,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "r",
+          "from": "b8",
+          "to": "b7",
+          "captured": null,
+          "timeMs": 1
+        },
+        {
+          "turn": 13,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "S",
+          "from": "g4",
+          "to": "g5",
+          "captured": null,
+          "timeMs": 27
+        },
+        {
+          "turn": 14,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "s",
+          "from": "c8",
+          "to": "c7",
+          "captured": null,
+          "timeMs": 1
+        },
+        {
+          "turn": 15,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "S",
+          "from": "g5",
+          "to": "g6",
+          "captured": null,
+          "timeMs": 26
+        },
+        {
+          "turn": 16,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "p",
+          "from": "d8",
+          "to": "d7",
+          "captured": null,
+          "timeMs": 1
+        },
+        {
+          "turn": 17,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "S",
+          "from": "g6",
+          "to": "g7",
+          "captured": null,
+          "timeMs": 27
+        },
+        {
+          "turn": 18,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "r",
+          "from": "e8",
+          "to": "e7",
+          "captured": null,
+          "timeMs": 1
+        },
+        {
+          "turn": 19,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "S",
+          "from": "g7",
+          "to": "g8",
+          "captured": "p",
+          "timeMs": 26
+        },
+        {
+          "turn": 20,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "r",
+          "from": "h8",
+          "to": "g8",
+          "captured": "S",
+          "timeMs": 1
+        },
+        {
+          "turn": 21,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "R",
+          "from": "h1",
+          "to": "h2",
+          "captured": null,
+          "timeMs": 27
+        },
+        {
+          "turn": 22,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "s",
+          "from": "f8",
+          "to": "f7",
+          "captured": null,
+          "timeMs": 1
+        },
+        {
+          "turn": 23,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "R",
+          "from": "h2",
+          "to": "h3",
+          "captured": null,
+          "timeMs": 25
+        },
+        {
+          "turn": 24,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "r",
+          "from": "g8",
+          "to": "g7",
+          "captured": null,
+          "timeMs": 1
+        },
+        {
+          "turn": 25,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "R",
+          "from": "h3",
+          "to": "h4",
+          "captured": null,
+          "timeMs": 25
+        },
+        {
+          "turn": 26,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "s",
+          "from": "i8",
+          "to": "i7",
+          "captured": null,
+          "timeMs": 1
+        },
+        {
+          "turn": 27,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "R",
+          "from": "h4",
+          "to": "h5",
+          "captured": null,
+          "timeMs": 26
+        },
+        {
+          "turn": 28,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "s",
+          "from": "i7",
+          "to": "i6",
+          "captured": "P",
+          "timeMs": 1
+        },
+        {
+          "turn": 29,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "R",
+          "from": "h5",
+          "to": "h6",
+          "captured": null,
+          "timeMs": 26
+        },
+        {
+          "turn": 30,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "p",
+          "from": "a7",
+          "to": "a6",
+          "captured": null,
+          "timeMs": 1
+        },
+        {
+          "turn": 31,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "R",
+          "from": "h6",
+          "to": "i6",
+          "captured": "s",
+          "timeMs": 26
+        },
+        {
+          "turn": 32,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "r",
+          "from": "b7",
+          "to": "b6",
+          "captured": null,
+          "timeMs": 1
+        },
+        {
+          "turn": 33,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "R",
+          "from": "i6",
+          "to": "i7",
+          "captured": null,
+          "timeMs": 28
+        },
+        {
+          "turn": 34,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "s",
+          "from": "c7",
+          "to": "c6",
+          "captured": null,
+          "timeMs": 1
+        },
+        {
+          "turn": 35,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "R",
+          "from": "i7",
+          "to": "i8",
+          "captured": null,
+          "timeMs": 28
+        },
+        {
+          "turn": 36,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "p",
+          "from": "d7",
+          "to": "d6",
+          "captured": null,
+          "timeMs": 1
+        },
+        {
+          "turn": 37,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "R",
+          "from": "i8",
+          "to": "i9",
+          "captured": null,
+          "timeMs": 27
+        }
+      ]
+    },
+    {
+      "botId": 3,
+      "botLevel": 3,
+      "botName": "[Hạng #3] HoangAnh_Pro (PYTHON)",
+      "botElo": 1200,
+      "userSide": "RED",
+      "result": "WIN",
+      "winnerSide": "RED",
+      "winReason": "BASE_CAPTURE",
+      "errorDetail": null,
+      "turnsCount": 37,
+      "userTurns": 19,
+      "execTimeMs": 497,
+      "score": 300,
+      "moves": [
+        {
+          "turn": 1,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "P",
+          "from": "i2",
+          "to": "i3",
+          "captured": null,
+          "timeMs": 32
+        },
+        {
+          "turn": 2,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "r",
+          "from": "b9",
+          "to": "b8",
+          "captured": null,
+          "timeMs": 46
+        },
+        {
+          "turn": 3,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "P",
+          "from": "i3",
+          "to": "i4",
+          "captured": null,
+          "timeMs": 30
+        },
+        {
+          "turn": 4,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "p",
+          "from": "d9",
+          "to": "d8",
+          "captured": null,
+          "timeMs": 1
+        },
+        {
+          "turn": 5,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "P",
+          "from": "i4",
+          "to": "i5",
+          "captured": null,
+          "timeMs": 30
+        },
+        {
+          "turn": 6,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "s",
+          "from": "f9",
+          "to": "f8",
+          "captured": null,
+          "timeMs": 1
+        },
+        {
+          "turn": 7,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "P",
+          "from": "i5",
+          "to": "i6",
+          "captured": null,
+          "timeMs": 27
+        },
+        {
+          "turn": 8,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "r",
+          "from": "h9",
+          "to": "h8",
+          "captured": null,
+          "timeMs": 1
+        },
+        {
+          "turn": 9,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "S",
+          "from": "g2",
+          "to": "g3",
+          "captured": null,
+          "timeMs": 25
+        },
+        {
+          "turn": 10,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "p",
+          "from": "a8",
+          "to": "a7",
+          "captured": null,
+          "timeMs": 1
+        },
+        {
+          "turn": 11,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "S",
+          "from": "g3",
+          "to": "g4",
+          "captured": null,
+          "timeMs": 25
+        },
+        {
+          "turn": 12,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "r",
+          "from": "b8",
+          "to": "b7",
+          "captured": null,
+          "timeMs": 1
+        },
+        {
+          "turn": 13,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "S",
+          "from": "g4",
+          "to": "g5",
+          "captured": null,
+          "timeMs": 25
+        },
+        {
+          "turn": 14,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "s",
+          "from": "c8",
+          "to": "c7",
+          "captured": null,
+          "timeMs": 1
+        },
+        {
+          "turn": 15,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "S",
+          "from": "g5",
+          "to": "g6",
+          "captured": null,
+          "timeMs": 25
+        },
+        {
+          "turn": 16,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "p",
+          "from": "d8",
+          "to": "d7",
+          "captured": null,
+          "timeMs": 1
+        },
+        {
+          "turn": 17,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "S",
+          "from": "g6",
+          "to": "g7",
+          "captured": null,
+          "timeMs": 25
+        },
+        {
+          "turn": 18,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "r",
+          "from": "e8",
+          "to": "e7",
+          "captured": null,
+          "timeMs": 1
+        },
+        {
+          "turn": 19,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "S",
+          "from": "g7",
+          "to": "g8",
+          "captured": "p",
+          "timeMs": 25
+        },
+        {
+          "turn": 20,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "r",
+          "from": "h8",
+          "to": "g8",
+          "captured": "S",
+          "timeMs": 1
+        },
+        {
+          "turn": 21,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "R",
+          "from": "h1",
+          "to": "h2",
+          "captured": null,
+          "timeMs": 25
+        },
+        {
+          "turn": 22,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "s",
+          "from": "f8",
+          "to": "f7",
+          "captured": null,
+          "timeMs": 1
+        },
+        {
+          "turn": 23,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "R",
+          "from": "h2",
+          "to": "h3",
+          "captured": null,
+          "timeMs": 25
+        },
+        {
+          "turn": 24,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "r",
+          "from": "g8",
+          "to": "g7",
+          "captured": null,
+          "timeMs": 1
+        },
+        {
+          "turn": 25,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "R",
+          "from": "h3",
+          "to": "h4",
+          "captured": null,
+          "timeMs": 25
+        },
+        {
+          "turn": 26,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "s",
+          "from": "i8",
+          "to": "i7",
+          "captured": null,
+          "timeMs": 1
+        },
+        {
+          "turn": 27,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "R",
+          "from": "h4",
+          "to": "h5",
+          "captured": null,
+          "timeMs": 25
+        },
+        {
+          "turn": 28,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "s",
+          "from": "i7",
+          "to": "i6",
+          "captured": "P",
+          "timeMs": 1
+        },
+        {
+          "turn": 29,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "R",
+          "from": "h5",
+          "to": "h6",
+          "captured": null,
+          "timeMs": 24
+        },
+        {
+          "turn": 30,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "p",
+          "from": "a7",
+          "to": "a6",
+          "captured": null,
+          "timeMs": 1
+        },
+        {
+          "turn": 31,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "R",
+          "from": "h6",
+          "to": "i6",
+          "captured": "s",
+          "timeMs": 26
+        },
+        {
+          "turn": 32,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "r",
+          "from": "b7",
+          "to": "b6",
+          "captured": null,
+          "timeMs": 1
+        },
+        {
+          "turn": 33,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "R",
+          "from": "i6",
+          "to": "i7",
+          "captured": null,
+          "timeMs": 26
+        },
+        {
+          "turn": 34,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "s",
+          "from": "c7",
+          "to": "c6",
+          "captured": null,
+          "timeMs": 1
+        },
+        {
+          "turn": 35,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "R",
+          "from": "i7",
+          "to": "i8",
+          "captured": null,
+          "timeMs": 26
+        },
+        {
+          "turn": 36,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "p",
+          "from": "d7",
+          "to": "d6",
+          "captured": null,
+          "timeMs": 1
+        },
+        {
+          "turn": 37,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "R",
+          "from": "i8",
+          "to": "i9",
+          "captured": null,
+          "timeMs": 26
+        }
+      ]
+    },
+    {
+      "botId": 4,
+      "botLevel": 2,
+      "botName": "[Hạng #2] SinhVien_TrungBinh (PYTHON)",
+      "botElo": 1200,
+      "userSide": "RED",
+      "result": "WIN",
+      "winnerSide": "RED",
+      "winReason": "BASE_CAPTURE",
+      "errorDetail": null,
+      "turnsCount": 37,
+      "userTurns": 19,
+      "execTimeMs": 523,
+      "score": 300,
+      "moves": [
+        {
+          "turn": 1,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "P",
+          "from": "i2",
+          "to": "i3",
+          "captured": null,
+          "timeMs": 27
+        },
+        {
+          "turn": 2,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "r",
+          "from": "b9",
+          "to": "b8",
+          "captured": null,
+          "timeMs": 44
+        },
+        {
+          "turn": 3,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "P",
+          "from": "i3",
+          "to": "i4",
+          "captured": null,
+          "timeMs": 29
+        },
+        {
+          "turn": 4,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "p",
+          "from": "d9",
+          "to": "d8",
+          "captured": null,
+          "timeMs": 1
+        },
+        {
+          "turn": 5,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "P",
+          "from": "i4",
+          "to": "i5",
+          "captured": null,
+          "timeMs": 29
+        },
+        {
+          "turn": 6,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "s",
+          "from": "f9",
+          "to": "f8",
+          "captured": null,
+          "timeMs": 1
+        },
+        {
+          "turn": 7,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "P",
+          "from": "i5",
+          "to": "i6",
+          "captured": null,
+          "timeMs": 28
+        },
+        {
+          "turn": 8,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "r",
+          "from": "h9",
+          "to": "h8",
+          "captured": null,
+          "timeMs": 1
+        },
+        {
+          "turn": 9,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "S",
+          "from": "g2",
+          "to": "g3",
+          "captured": null,
+          "timeMs": 29
+        },
+        {
+          "turn": 10,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "p",
+          "from": "a8",
+          "to": "a7",
+          "captured": null,
+          "timeMs": 1
+        },
+        {
+          "turn": 11,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "S",
+          "from": "g3",
+          "to": "g4",
+          "captured": null,
+          "timeMs": 28
+        },
+        {
+          "turn": 12,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "r",
+          "from": "b8",
+          "to": "b7",
+          "captured": null,
+          "timeMs": 1
+        },
+        {
+          "turn": 13,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "S",
+          "from": "g4",
+          "to": "g5",
+          "captured": null,
+          "timeMs": 30
+        },
+        {
+          "turn": 14,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "s",
+          "from": "c8",
+          "to": "c7",
+          "captured": null,
+          "timeMs": 1
+        },
+        {
+          "turn": 15,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "S",
+          "from": "g5",
+          "to": "g6",
+          "captured": null,
+          "timeMs": 28
+        },
+        {
+          "turn": 16,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "p",
+          "from": "d8",
+          "to": "d7",
+          "captured": null,
+          "timeMs": 1
+        },
+        {
+          "turn": 17,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "S",
+          "from": "g6",
+          "to": "g7",
+          "captured": null,
+          "timeMs": 31
+        },
+        {
+          "turn": 18,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "r",
+          "from": "e8",
+          "to": "e7",
+          "captured": null,
+          "timeMs": 1
+        },
+        {
+          "turn": 19,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "S",
+          "from": "g7",
+          "to": "g8",
+          "captured": "p",
+          "timeMs": 28
+        },
+        {
+          "turn": 20,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "r",
+          "from": "h8",
+          "to": "g8",
+          "captured": "S",
+          "timeMs": 1
+        },
+        {
+          "turn": 21,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "R",
+          "from": "h1",
+          "to": "h2",
+          "captured": null,
+          "timeMs": 30
+        },
+        {
+          "turn": 22,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "s",
+          "from": "f8",
+          "to": "f7",
+          "captured": null,
+          "timeMs": 1
+        },
+        {
+          "turn": 23,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "R",
+          "from": "h2",
+          "to": "h3",
+          "captured": null,
+          "timeMs": 29
+        },
+        {
+          "turn": 24,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "r",
+          "from": "g8",
+          "to": "g7",
+          "captured": null,
+          "timeMs": 1
+        },
+        {
+          "turn": 25,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "R",
+          "from": "h3",
+          "to": "h4",
+          "captured": null,
+          "timeMs": 26
+        },
+        {
+          "turn": 26,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "s",
+          "from": "i8",
+          "to": "i7",
+          "captured": null,
+          "timeMs": 1
+        },
+        {
+          "turn": 27,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "R",
+          "from": "h4",
+          "to": "h5",
+          "captured": null,
+          "timeMs": 26
+        },
+        {
+          "turn": 28,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "s",
+          "from": "i7",
+          "to": "i6",
+          "captured": "P",
+          "timeMs": 1
+        },
+        {
+          "turn": 29,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "R",
+          "from": "h5",
+          "to": "h6",
+          "captured": null,
+          "timeMs": 25
+        },
+        {
+          "turn": 30,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "p",
+          "from": "a7",
+          "to": "a6",
+          "captured": null,
+          "timeMs": 1
+        },
+        {
+          "turn": 31,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "R",
+          "from": "h6",
+          "to": "i6",
+          "captured": "s",
+          "timeMs": 25
+        },
+        {
+          "turn": 32,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "r",
+          "from": "b7",
+          "to": "b6",
+          "captured": null,
+          "timeMs": 1
+        },
+        {
+          "turn": 33,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "R",
+          "from": "i6",
+          "to": "i7",
+          "captured": null,
+          "timeMs": 25
+        },
+        {
+          "turn": 34,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "s",
+          "from": "c7",
+          "to": "c6",
+          "captured": null,
+          "timeMs": 1
+        },
+        {
+          "turn": 35,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "R",
+          "from": "i7",
+          "to": "i8",
+          "captured": null,
+          "timeMs": 25
+        },
+        {
+          "turn": 36,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "p",
+          "from": "d7",
+          "to": "d6",
+          "captured": null,
+          "timeMs": 1
+        },
+        {
+          "turn": 37,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "R",
+          "from": "i8",
+          "to": "i9",
+          "captured": null,
+          "timeMs": 25
+        }
+      ]
+    },
+    {
+      "botId": 5,
+      "botLevel": 1,
+      "botName": "[Hạng #1] MinhKiet_Top1 (PYTHON)",
+      "botElo": 1200,
+      "userSide": "RED",
+      "result": "LOSS",
+      "winnerSide": "BLUE",
+      "winReason": "BASE_CAPTURE",
+      "errorDetail": null,
+      "turnsCount": 30,
+      "userTurns": 15,
+      "execTimeMs": 407,
+      "score": 0,
+      "moves": [
+        {
+          "turn": 1,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "P",
+          "from": "i2",
+          "to": "i3",
+          "captured": null,
+          "timeMs": 30
+        },
+        {
+          "turn": 2,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "p",
+          "from": "a8",
+          "to": "a7",
+          "captured": null,
+          "timeMs": 45
+        },
+        {
+          "turn": 3,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "P",
+          "from": "i3",
+          "to": "i4",
+          "captured": null,
+          "timeMs": 30
+        },
+        {
+          "turn": 4,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "p",
+          "from": "a7",
+          "to": "a6",
+          "captured": null,
+          "timeMs": 1
+        },
+        {
+          "turn": 5,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "P",
+          "from": "i4",
+          "to": "i5",
+          "captured": null,
+          "timeMs": 29
+        },
+        {
+          "turn": 6,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "p",
+          "from": "a6",
+          "to": "a5",
+          "captured": null,
+          "timeMs": 1
+        },
+        {
+          "turn": 7,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "P",
+          "from": "i5",
+          "to": "i6",
+          "captured": null,
+          "timeMs": 28
+        },
+        {
+          "turn": 8,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "p",
+          "from": "a5",
+          "to": "a4",
+          "captured": null,
+          "timeMs": 1
+        },
+        {
+          "turn": 9,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "S",
+          "from": "a2",
+          "to": "a3",
+          "captured": null,
+          "timeMs": 27
+        },
+        {
+          "turn": 10,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "s",
+          "from": "i8",
+          "to": "i7",
+          "captured": null,
+          "timeMs": 1
+        },
+        {
+          "turn": 11,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "S",
+          "from": "a3",
+          "to": "a4",
+          "captured": "p",
+          "timeMs": 29
+        },
+        {
+          "turn": 12,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "s",
+          "from": "i7",
+          "to": "i6",
+          "captured": "P",
+          "timeMs": 1
+        },
+        {
+          "turn": 13,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "S",
+          "from": "g2",
+          "to": "g3",
+          "captured": null,
+          "timeMs": 26
+        },
+        {
+          "turn": 14,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "r",
+          "from": "b9",
+          "to": "b8",
+          "captured": null,
+          "timeMs": 1
+        },
+        {
+          "turn": 15,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "S",
+          "from": "g3",
+          "to": "g4",
+          "captured": null,
+          "timeMs": 26
+        },
+        {
+          "turn": 16,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "r",
+          "from": "b8",
+          "to": "b7",
+          "captured": null,
+          "timeMs": 1
+        },
+        {
+          "turn": 17,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "S",
+          "from": "g4",
+          "to": "g5",
+          "captured": null,
+          "timeMs": 27
+        },
+        {
+          "turn": 18,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "r",
+          "from": "b7",
+          "to": "b6",
+          "captured": null,
+          "timeMs": 1
+        },
+        {
+          "turn": 19,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "S",
+          "from": "g5",
+          "to": "g6",
+          "captured": null,
+          "timeMs": 26
+        },
+        {
+          "turn": 20,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "r",
+          "from": "b6",
+          "to": "b5",
+          "captured": null,
+          "timeMs": 1
+        },
+        {
+          "turn": 21,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "S",
+          "from": "g6",
+          "to": "g7",
+          "captured": null,
+          "timeMs": 25
+        },
+        {
+          "turn": 22,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "r",
+          "from": "b5",
+          "to": "b4",
+          "captured": null,
+          "timeMs": 1
+        },
+        {
+          "turn": 23,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "S",
+          "from": "g7",
+          "to": "g8",
+          "captured": "p",
+          "timeMs": 25
+        },
+        {
+          "turn": 24,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "r",
+          "from": "b4",
+          "to": "a4",
+          "captured": "S",
+          "timeMs": 1
+        },
+        {
+          "turn": 25,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "R",
+          "from": "h1",
+          "to": "h2",
+          "captured": null,
+          "timeMs": 26
+        },
+        {
+          "turn": 26,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "r",
+          "from": "a4",
+          "to": "a3",
+          "captured": null,
+          "timeMs": 1
+        },
+        {
+          "turn": 27,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "R",
+          "from": "h2",
+          "to": "h3",
+          "captured": null,
+          "timeMs": 27
+        },
+        {
+          "turn": 28,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "r",
+          "from": "a3",
+          "to": "a2",
+          "captured": null,
+          "timeMs": 1
+        },
+        {
+          "turn": 29,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "R",
+          "from": "h3",
+          "to": "h4",
+          "captured": null,
+          "timeMs": 26
+        },
+        {
+          "turn": 30,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "r",
+          "from": "a2",
+          "to": "a1",
+          "captured": null,
+          "timeMs": 1
+        }
+      ]
+    }
+  ],
+  "createdAt": "2026-10-25T14:06:39.831Z",
+  "ladderMatches": [
+    {
+      "stepNumber": 1,
+      "defenderRankBefore": 5,
+      "defenderUsername": "BaoNam_Newbie",
+      "defenderLanguage": "python",
+      "userSide": "RED",
+      "result": "WIN",
+      "winnerSide": "RED",
+      "winReason": "BASE_CAPTURE",
+      "errorDetail": null,
+      "turnsCount": 39,
+      "execTimeMs": 556,
+      "moves": [
+        {
+          "turn": 1,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "P",
+          "from": "i2",
+          "to": "i3",
+          "captured": null,
+          "timeMs": 59
+        },
+        {
+          "turn": 2,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "p",
+          "from": "a8",
+          "to": "a9",
+          "captured": null,
+          "timeMs": 47
+        },
+        {
+          "turn": 3,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "P",
+          "from": "i3",
+          "to": "i4",
+          "captured": null,
+          "timeMs": 27
+        },
+        {
+          "turn": 4,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "s",
+          "from": "c8",
+          "to": "c9",
+          "captured": null,
+          "timeMs": 1
+        },
+        {
+          "turn": 5,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "P",
+          "from": "i4",
+          "to": "i5",
+          "captured": null,
+          "timeMs": 25
+        },
+        {
+          "turn": 6,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "r",
+          "from": "e8",
+          "to": "e9",
+          "captured": null,
+          "timeMs": 1
+        },
+        {
+          "turn": 7,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "P",
+          "from": "i5",
+          "to": "i6",
+          "captured": null,
+          "timeMs": 25
+        },
+        {
+          "turn": 8,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "p",
+          "from": "g8",
+          "to": "g9",
+          "captured": null,
+          "timeMs": 1
+        },
+        {
+          "turn": 9,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "S",
+          "from": "g2",
+          "to": "g3",
+          "captured": null,
+          "timeMs": 25
+        },
+        {
+          "turn": 10,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "s",
+          "from": "i8",
+          "to": "i7",
+          "captured": null,
+          "timeMs": 1
+        },
+        {
+          "turn": 11,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "S",
+          "from": "g3",
+          "to": "g4",
+          "captured": null,
+          "timeMs": 26
+        },
+        {
+          "turn": 12,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "s",
+          "from": "i7",
+          "to": "i8",
+          "captured": null,
+          "timeMs": 1
+        },
+        {
+          "turn": 13,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "S",
+          "from": "g4",
+          "to": "g5",
+          "captured": null,
+          "timeMs": 25
+        },
+        {
+          "turn": 14,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "s",
+          "from": "i8",
+          "to": "i7",
+          "captured": null,
+          "timeMs": 1
+        },
+        {
+          "turn": 15,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "S",
+          "from": "g5",
+          "to": "g6",
+          "captured": null,
+          "timeMs": 27
+        },
+        {
+          "turn": 16,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "s",
+          "from": "i7",
+          "to": "i8",
+          "captured": null,
+          "timeMs": 1
+        },
+        {
+          "turn": 17,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "S",
+          "from": "g6",
+          "to": "g7",
+          "captured": null,
+          "timeMs": 29
+        },
+        {
+          "turn": 18,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "s",
+          "from": "i8",
+          "to": "i7",
+          "captured": null,
+          "timeMs": 1
+        },
+        {
+          "turn": 19,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "S",
+          "from": "g7",
+          "to": "g8",
+          "captured": null,
+          "timeMs": 29
+        },
+        {
+          "turn": 20,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "s",
+          "from": "i7",
+          "to": "i8",
+          "captured": null,
+          "timeMs": 1
+        },
+        {
+          "turn": 21,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "S",
+          "from": "g8",
+          "to": "g9",
+          "captured": "p",
+          "timeMs": 26
+        },
+        {
+          "turn": 22,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "s",
+          "from": "i8",
+          "to": "i7",
+          "captured": null,
+          "timeMs": 1
+        },
+        {
+          "turn": 23,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "R",
+          "from": "h1",
+          "to": "h2",
+          "captured": null,
+          "timeMs": 26
+        },
+        {
+          "turn": 24,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "s",
+          "from": "i7",
+          "to": "i8",
+          "captured": null,
+          "timeMs": 1
+        },
+        {
+          "turn": 25,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "R",
+          "from": "h2",
+          "to": "h3",
+          "captured": null,
+          "timeMs": 26
+        },
+        {
+          "turn": 26,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "s",
+          "from": "i8",
+          "to": "i7",
+          "captured": null,
+          "timeMs": 1
+        },
+        {
+          "turn": 27,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "R",
+          "from": "h3",
+          "to": "h4",
+          "captured": null,
+          "timeMs": 26
+        },
+        {
+          "turn": 28,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "s",
+          "from": "i7",
+          "to": "i8",
+          "captured": null,
+          "timeMs": 1
+        },
+        {
+          "turn": 29,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "R",
+          "from": "h4",
+          "to": "h5",
+          "captured": null,
+          "timeMs": 25
+        },
+        {
+          "turn": 30,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "s",
+          "from": "i8",
+          "to": "i7",
+          "captured": null,
+          "timeMs": 1
+        },
+        {
+          "turn": 31,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "R",
+          "from": "h5",
+          "to": "h6",
+          "captured": null,
+          "timeMs": 25
+        },
+        {
+          "turn": 32,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "s",
+          "from": "i7",
+          "to": "i8",
+          "captured": null,
+          "timeMs": 1
+        },
+        {
+          "turn": 33,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "R",
+          "from": "h6",
+          "to": "h7",
+          "captured": null,
+          "timeMs": 25
+        },
+        {
+          "turn": 34,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "s",
+          "from": "i8",
+          "to": "i7",
+          "captured": null,
+          "timeMs": 1
+        },
+        {
+          "turn": 35,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "R",
+          "from": "h7",
+          "to": "i7",
+          "captured": "s",
+          "timeMs": 26
+        },
+        {
+          "turn": 36,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "p",
+          "from": "a9",
+          "to": "a8",
+          "captured": null,
+          "timeMs": 1
+        },
+        {
+          "turn": 37,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "R",
+          "from": "i7",
+          "to": "i8",
+          "captured": null,
+          "timeMs": 27
+        },
+        {
+          "turn": 38,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "p",
+          "from": "a8",
+          "to": "a9",
+          "captured": null,
+          "timeMs": 1
+        },
+        {
+          "turn": 39,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "R",
+          "from": "i8",
+          "to": "i9",
+          "captured": null,
+          "timeMs": 27
+        }
+      ]
+    },
+    {
+      "stepNumber": 2,
+      "defenderRankBefore": 4,
+      "defenderUsername": "TuanHung_Coder",
+      "defenderLanguage": "python",
+      "userSide": "RED",
+      "result": "WIN",
+      "winnerSide": "RED",
+      "winReason": "BASE_CAPTURE",
+      "errorDetail": null,
+      "turnsCount": 37,
+      "execTimeMs": 515,
+      "moves": [
+        {
+          "turn": 1,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "P",
+          "from": "i2",
+          "to": "i3",
+          "captured": null,
+          "timeMs": 30
+        },
+        {
+          "turn": 2,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "r",
+          "from": "b9",
+          "to": "b8",
+          "captured": null,
+          "timeMs": 43
+        },
+        {
+          "turn": 3,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "P",
+          "from": "i3",
+          "to": "i4",
+          "captured": null,
+          "timeMs": 28
+        },
+        {
+          "turn": 4,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "p",
+          "from": "d9",
+          "to": "d8",
+          "captured": null,
+          "timeMs": 1
+        },
+        {
+          "turn": 5,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "P",
+          "from": "i4",
+          "to": "i5",
+          "captured": null,
+          "timeMs": 29
+        },
+        {
+          "turn": 6,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "s",
+          "from": "f9",
+          "to": "f8",
+          "captured": null,
+          "timeMs": 1
+        },
+        {
+          "turn": 7,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "P",
+          "from": "i5",
+          "to": "i6",
+          "captured": null,
+          "timeMs": 27
+        },
+        {
+          "turn": 8,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "r",
+          "from": "h9",
+          "to": "h8",
+          "captured": null,
+          "timeMs": 1
+        },
+        {
+          "turn": 9,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "S",
+          "from": "g2",
+          "to": "g3",
+          "captured": null,
+          "timeMs": 29
+        },
+        {
+          "turn": 10,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "p",
+          "from": "a8",
+          "to": "a7",
+          "captured": null,
+          "timeMs": 1
+        },
+        {
+          "turn": 11,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "S",
+          "from": "g3",
+          "to": "g4",
+          "captured": null,
+          "timeMs": 28
+        },
+        {
+          "turn": 12,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "r",
+          "from": "b8",
+          "to": "b7",
+          "captured": null,
+          "timeMs": 1
+        },
+        {
+          "turn": 13,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "S",
+          "from": "g4",
+          "to": "g5",
+          "captured": null,
+          "timeMs": 27
+        },
+        {
+          "turn": 14,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "s",
+          "from": "c8",
+          "to": "c7",
+          "captured": null,
+          "timeMs": 1
+        },
+        {
+          "turn": 15,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "S",
+          "from": "g5",
+          "to": "g6",
+          "captured": null,
+          "timeMs": 26
+        },
+        {
+          "turn": 16,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "p",
+          "from": "d8",
+          "to": "d7",
+          "captured": null,
+          "timeMs": 1
+        },
+        {
+          "turn": 17,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "S",
+          "from": "g6",
+          "to": "g7",
+          "captured": null,
+          "timeMs": 27
+        },
+        {
+          "turn": 18,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "r",
+          "from": "e8",
+          "to": "e7",
+          "captured": null,
+          "timeMs": 1
+        },
+        {
+          "turn": 19,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "S",
+          "from": "g7",
+          "to": "g8",
+          "captured": "p",
+          "timeMs": 26
+        },
+        {
+          "turn": 20,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "r",
+          "from": "h8",
+          "to": "g8",
+          "captured": "S",
+          "timeMs": 1
+        },
+        {
+          "turn": 21,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "R",
+          "from": "h1",
+          "to": "h2",
+          "captured": null,
+          "timeMs": 27
+        },
+        {
+          "turn": 22,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "s",
+          "from": "f8",
+          "to": "f7",
+          "captured": null,
+          "timeMs": 1
+        },
+        {
+          "turn": 23,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "R",
+          "from": "h2",
+          "to": "h3",
+          "captured": null,
+          "timeMs": 25
+        },
+        {
+          "turn": 24,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "r",
+          "from": "g8",
+          "to": "g7",
+          "captured": null,
+          "timeMs": 1
+        },
+        {
+          "turn": 25,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "R",
+          "from": "h3",
+          "to": "h4",
+          "captured": null,
+          "timeMs": 25
+        },
+        {
+          "turn": 26,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "s",
+          "from": "i8",
+          "to": "i7",
+          "captured": null,
+          "timeMs": 1
+        },
+        {
+          "turn": 27,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "R",
+          "from": "h4",
+          "to": "h5",
+          "captured": null,
+          "timeMs": 26
+        },
+        {
+          "turn": 28,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "s",
+          "from": "i7",
+          "to": "i6",
+          "captured": "P",
+          "timeMs": 1
+        },
+        {
+          "turn": 29,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "R",
+          "from": "h5",
+          "to": "h6",
+          "captured": null,
+          "timeMs": 26
+        },
+        {
+          "turn": 30,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "p",
+          "from": "a7",
+          "to": "a6",
+          "captured": null,
+          "timeMs": 1
+        },
+        {
+          "turn": 31,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "R",
+          "from": "h6",
+          "to": "i6",
+          "captured": "s",
+          "timeMs": 26
+        },
+        {
+          "turn": 32,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "r",
+          "from": "b7",
+          "to": "b6",
+          "captured": null,
+          "timeMs": 1
+        },
+        {
+          "turn": 33,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "R",
+          "from": "i6",
+          "to": "i7",
+          "captured": null,
+          "timeMs": 28
+        },
+        {
+          "turn": 34,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "s",
+          "from": "c7",
+          "to": "c6",
+          "captured": null,
+          "timeMs": 1
+        },
+        {
+          "turn": 35,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "R",
+          "from": "i7",
+          "to": "i8",
+          "captured": null,
+          "timeMs": 28
+        },
+        {
+          "turn": 36,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "p",
+          "from": "d7",
+          "to": "d6",
+          "captured": null,
+          "timeMs": 1
+        },
+        {
+          "turn": 37,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "R",
+          "from": "i8",
+          "to": "i9",
+          "captured": null,
+          "timeMs": 27
+        }
+      ]
+    },
+    {
+      "stepNumber": 3,
+      "defenderRankBefore": 3,
+      "defenderUsername": "HoangAnh_Pro",
+      "defenderLanguage": "python",
+      "userSide": "RED",
+      "result": "WIN",
+      "winnerSide": "RED",
+      "winReason": "BASE_CAPTURE",
+      "errorDetail": null,
+      "turnsCount": 37,
+      "execTimeMs": 497,
+      "moves": [
+        {
+          "turn": 1,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "P",
+          "from": "i2",
+          "to": "i3",
+          "captured": null,
+          "timeMs": 32
+        },
+        {
+          "turn": 2,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "r",
+          "from": "b9",
+          "to": "b8",
+          "captured": null,
+          "timeMs": 46
+        },
+        {
+          "turn": 3,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "P",
+          "from": "i3",
+          "to": "i4",
+          "captured": null,
+          "timeMs": 30
+        },
+        {
+          "turn": 4,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "p",
+          "from": "d9",
+          "to": "d8",
+          "captured": null,
+          "timeMs": 1
+        },
+        {
+          "turn": 5,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "P",
+          "from": "i4",
+          "to": "i5",
+          "captured": null,
+          "timeMs": 30
+        },
+        {
+          "turn": 6,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "s",
+          "from": "f9",
+          "to": "f8",
+          "captured": null,
+          "timeMs": 1
+        },
+        {
+          "turn": 7,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "P",
+          "from": "i5",
+          "to": "i6",
+          "captured": null,
+          "timeMs": 27
+        },
+        {
+          "turn": 8,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "r",
+          "from": "h9",
+          "to": "h8",
+          "captured": null,
+          "timeMs": 1
+        },
+        {
+          "turn": 9,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "S",
+          "from": "g2",
+          "to": "g3",
+          "captured": null,
+          "timeMs": 25
+        },
+        {
+          "turn": 10,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "p",
+          "from": "a8",
+          "to": "a7",
+          "captured": null,
+          "timeMs": 1
+        },
+        {
+          "turn": 11,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "S",
+          "from": "g3",
+          "to": "g4",
+          "captured": null,
+          "timeMs": 25
+        },
+        {
+          "turn": 12,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "r",
+          "from": "b8",
+          "to": "b7",
+          "captured": null,
+          "timeMs": 1
+        },
+        {
+          "turn": 13,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "S",
+          "from": "g4",
+          "to": "g5",
+          "captured": null,
+          "timeMs": 25
+        },
+        {
+          "turn": 14,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "s",
+          "from": "c8",
+          "to": "c7",
+          "captured": null,
+          "timeMs": 1
+        },
+        {
+          "turn": 15,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "S",
+          "from": "g5",
+          "to": "g6",
+          "captured": null,
+          "timeMs": 25
+        },
+        {
+          "turn": 16,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "p",
+          "from": "d8",
+          "to": "d7",
+          "captured": null,
+          "timeMs": 1
+        },
+        {
+          "turn": 17,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "S",
+          "from": "g6",
+          "to": "g7",
+          "captured": null,
+          "timeMs": 25
+        },
+        {
+          "turn": 18,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "r",
+          "from": "e8",
+          "to": "e7",
+          "captured": null,
+          "timeMs": 1
+        },
+        {
+          "turn": 19,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "S",
+          "from": "g7",
+          "to": "g8",
+          "captured": "p",
+          "timeMs": 25
+        },
+        {
+          "turn": 20,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "r",
+          "from": "h8",
+          "to": "g8",
+          "captured": "S",
+          "timeMs": 1
+        },
+        {
+          "turn": 21,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "R",
+          "from": "h1",
+          "to": "h2",
+          "captured": null,
+          "timeMs": 25
+        },
+        {
+          "turn": 22,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "s",
+          "from": "f8",
+          "to": "f7",
+          "captured": null,
+          "timeMs": 1
+        },
+        {
+          "turn": 23,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "R",
+          "from": "h2",
+          "to": "h3",
+          "captured": null,
+          "timeMs": 25
+        },
+        {
+          "turn": 24,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "r",
+          "from": "g8",
+          "to": "g7",
+          "captured": null,
+          "timeMs": 1
+        },
+        {
+          "turn": 25,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "R",
+          "from": "h3",
+          "to": "h4",
+          "captured": null,
+          "timeMs": 25
+        },
+        {
+          "turn": 26,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "s",
+          "from": "i8",
+          "to": "i7",
+          "captured": null,
+          "timeMs": 1
+        },
+        {
+          "turn": 27,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "R",
+          "from": "h4",
+          "to": "h5",
+          "captured": null,
+          "timeMs": 25
+        },
+        {
+          "turn": 28,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "s",
+          "from": "i7",
+          "to": "i6",
+          "captured": "P",
+          "timeMs": 1
+        },
+        {
+          "turn": 29,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "R",
+          "from": "h5",
+          "to": "h6",
+          "captured": null,
+          "timeMs": 24
+        },
+        {
+          "turn": 30,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "p",
+          "from": "a7",
+          "to": "a6",
+          "captured": null,
+          "timeMs": 1
+        },
+        {
+          "turn": 31,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "R",
+          "from": "h6",
+          "to": "i6",
+          "captured": "s",
+          "timeMs": 26
+        },
+        {
+          "turn": 32,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "r",
+          "from": "b7",
+          "to": "b6",
+          "captured": null,
+          "timeMs": 1
+        },
+        {
+          "turn": 33,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "R",
+          "from": "i6",
+          "to": "i7",
+          "captured": null,
+          "timeMs": 26
+        },
+        {
+          "turn": 34,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "s",
+          "from": "c7",
+          "to": "c6",
+          "captured": null,
+          "timeMs": 1
+        },
+        {
+          "turn": 35,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "R",
+          "from": "i7",
+          "to": "i8",
+          "captured": null,
+          "timeMs": 26
+        },
+        {
+          "turn": 36,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "p",
+          "from": "d7",
+          "to": "d6",
+          "captured": null,
+          "timeMs": 1
+        },
+        {
+          "turn": 37,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "R",
+          "from": "i8",
+          "to": "i9",
+          "captured": null,
+          "timeMs": 26
+        }
+      ]
+    },
+    {
+      "stepNumber": 4,
+      "defenderRankBefore": 2,
+      "defenderUsername": "SinhVien_TrungBinh",
+      "defenderLanguage": "python",
+      "userSide": "RED",
+      "result": "WIN",
+      "winnerSide": "RED",
+      "winReason": "BASE_CAPTURE",
+      "errorDetail": null,
+      "turnsCount": 37,
+      "execTimeMs": 523,
+      "moves": [
+        {
+          "turn": 1,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "P",
+          "from": "i2",
+          "to": "i3",
+          "captured": null,
+          "timeMs": 27
+        },
+        {
+          "turn": 2,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "r",
+          "from": "b9",
+          "to": "b8",
+          "captured": null,
+          "timeMs": 44
+        },
+        {
+          "turn": 3,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "P",
+          "from": "i3",
+          "to": "i4",
+          "captured": null,
+          "timeMs": 29
+        },
+        {
+          "turn": 4,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "p",
+          "from": "d9",
+          "to": "d8",
+          "captured": null,
+          "timeMs": 1
+        },
+        {
+          "turn": 5,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "P",
+          "from": "i4",
+          "to": "i5",
+          "captured": null,
+          "timeMs": 29
+        },
+        {
+          "turn": 6,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "s",
+          "from": "f9",
+          "to": "f8",
+          "captured": null,
+          "timeMs": 1
+        },
+        {
+          "turn": 7,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "P",
+          "from": "i5",
+          "to": "i6",
+          "captured": null,
+          "timeMs": 28
+        },
+        {
+          "turn": 8,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "r",
+          "from": "h9",
+          "to": "h8",
+          "captured": null,
+          "timeMs": 1
+        },
+        {
+          "turn": 9,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "S",
+          "from": "g2",
+          "to": "g3",
+          "captured": null,
+          "timeMs": 29
+        },
+        {
+          "turn": 10,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "p",
+          "from": "a8",
+          "to": "a7",
+          "captured": null,
+          "timeMs": 1
+        },
+        {
+          "turn": 11,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "S",
+          "from": "g3",
+          "to": "g4",
+          "captured": null,
+          "timeMs": 28
+        },
+        {
+          "turn": 12,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "r",
+          "from": "b8",
+          "to": "b7",
+          "captured": null,
+          "timeMs": 1
+        },
+        {
+          "turn": 13,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "S",
+          "from": "g4",
+          "to": "g5",
+          "captured": null,
+          "timeMs": 30
+        },
+        {
+          "turn": 14,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "s",
+          "from": "c8",
+          "to": "c7",
+          "captured": null,
+          "timeMs": 1
+        },
+        {
+          "turn": 15,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "S",
+          "from": "g5",
+          "to": "g6",
+          "captured": null,
+          "timeMs": 28
+        },
+        {
+          "turn": 16,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "p",
+          "from": "d8",
+          "to": "d7",
+          "captured": null,
+          "timeMs": 1
+        },
+        {
+          "turn": 17,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "S",
+          "from": "g6",
+          "to": "g7",
+          "captured": null,
+          "timeMs": 31
+        },
+        {
+          "turn": 18,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "r",
+          "from": "e8",
+          "to": "e7",
+          "captured": null,
+          "timeMs": 1
+        },
+        {
+          "turn": 19,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "S",
+          "from": "g7",
+          "to": "g8",
+          "captured": "p",
+          "timeMs": 28
+        },
+        {
+          "turn": 20,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "r",
+          "from": "h8",
+          "to": "g8",
+          "captured": "S",
+          "timeMs": 1
+        },
+        {
+          "turn": 21,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "R",
+          "from": "h1",
+          "to": "h2",
+          "captured": null,
+          "timeMs": 30
+        },
+        {
+          "turn": 22,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "s",
+          "from": "f8",
+          "to": "f7",
+          "captured": null,
+          "timeMs": 1
+        },
+        {
+          "turn": 23,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "R",
+          "from": "h2",
+          "to": "h3",
+          "captured": null,
+          "timeMs": 29
+        },
+        {
+          "turn": 24,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "r",
+          "from": "g8",
+          "to": "g7",
+          "captured": null,
+          "timeMs": 1
+        },
+        {
+          "turn": 25,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "R",
+          "from": "h3",
+          "to": "h4",
+          "captured": null,
+          "timeMs": 26
+        },
+        {
+          "turn": 26,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "s",
+          "from": "i8",
+          "to": "i7",
+          "captured": null,
+          "timeMs": 1
+        },
+        {
+          "turn": 27,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "R",
+          "from": "h4",
+          "to": "h5",
+          "captured": null,
+          "timeMs": 26
+        },
+        {
+          "turn": 28,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "s",
+          "from": "i7",
+          "to": "i6",
+          "captured": "P",
+          "timeMs": 1
+        },
+        {
+          "turn": 29,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "R",
+          "from": "h5",
+          "to": "h6",
+          "captured": null,
+          "timeMs": 25
+        },
+        {
+          "turn": 30,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "p",
+          "from": "a7",
+          "to": "a6",
+          "captured": null,
+          "timeMs": 1
+        },
+        {
+          "turn": 31,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "R",
+          "from": "h6",
+          "to": "i6",
+          "captured": "s",
+          "timeMs": 25
+        },
+        {
+          "turn": 32,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "r",
+          "from": "b7",
+          "to": "b6",
+          "captured": null,
+          "timeMs": 1
+        },
+        {
+          "turn": 33,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "R",
+          "from": "i6",
+          "to": "i7",
+          "captured": null,
+          "timeMs": 25
+        },
+        {
+          "turn": 34,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "s",
+          "from": "c7",
+          "to": "c6",
+          "captured": null,
+          "timeMs": 1
+        },
+        {
+          "turn": 35,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "R",
+          "from": "i7",
+          "to": "i8",
+          "captured": null,
+          "timeMs": 25
+        },
+        {
+          "turn": 36,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "p",
+          "from": "d7",
+          "to": "d6",
+          "captured": null,
+          "timeMs": 1
+        },
+        {
+          "turn": 37,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "R",
+          "from": "i8",
+          "to": "i9",
+          "captured": null,
+          "timeMs": 25
+        }
+      ]
+    },
+    {
+      "stepNumber": 5,
+      "defenderRankBefore": 1,
+      "defenderUsername": "MinhKiet_Top1",
+      "defenderLanguage": "python",
+      "userSide": "RED",
+      "result": "LOSS",
+      "winnerSide": "BLUE",
+      "winReason": "BASE_CAPTURE",
+      "errorDetail": null,
+      "turnsCount": 30,
+      "execTimeMs": 407,
+      "moves": [
+        {
+          "turn": 1,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "P",
+          "from": "i2",
+          "to": "i3",
+          "captured": null,
+          "timeMs": 30
+        },
+        {
+          "turn": 2,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "p",
+          "from": "a8",
+          "to": "a7",
+          "captured": null,
+          "timeMs": 45
+        },
+        {
+          "turn": 3,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "P",
+          "from": "i3",
+          "to": "i4",
+          "captured": null,
+          "timeMs": 30
+        },
+        {
+          "turn": 4,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "p",
+          "from": "a7",
+          "to": "a6",
+          "captured": null,
+          "timeMs": 1
+        },
+        {
+          "turn": 5,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "P",
+          "from": "i4",
+          "to": "i5",
+          "captured": null,
+          "timeMs": 29
+        },
+        {
+          "turn": 6,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "p",
+          "from": "a6",
+          "to": "a5",
+          "captured": null,
+          "timeMs": 1
+        },
+        {
+          "turn": 7,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "P",
+          "from": "i5",
+          "to": "i6",
+          "captured": null,
+          "timeMs": 28
+        },
+        {
+          "turn": 8,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "p",
+          "from": "a5",
+          "to": "a4",
+          "captured": null,
+          "timeMs": 1
+        },
+        {
+          "turn": 9,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "S",
+          "from": "a2",
+          "to": "a3",
+          "captured": null,
+          "timeMs": 27
+        },
+        {
+          "turn": 10,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "s",
+          "from": "i8",
+          "to": "i7",
+          "captured": null,
+          "timeMs": 1
+        },
+        {
+          "turn": 11,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "S",
+          "from": "a3",
+          "to": "a4",
+          "captured": "p",
+          "timeMs": 29
+        },
+        {
+          "turn": 12,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "s",
+          "from": "i7",
+          "to": "i6",
+          "captured": "P",
+          "timeMs": 1
+        },
+        {
+          "turn": 13,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "S",
+          "from": "g2",
+          "to": "g3",
+          "captured": null,
+          "timeMs": 26
+        },
+        {
+          "turn": 14,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "r",
+          "from": "b9",
+          "to": "b8",
+          "captured": null,
+          "timeMs": 1
+        },
+        {
+          "turn": 15,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "S",
+          "from": "g3",
+          "to": "g4",
+          "captured": null,
+          "timeMs": 26
+        },
+        {
+          "turn": 16,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "r",
+          "from": "b8",
+          "to": "b7",
+          "captured": null,
+          "timeMs": 1
+        },
+        {
+          "turn": 17,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "S",
+          "from": "g4",
+          "to": "g5",
+          "captured": null,
+          "timeMs": 27
+        },
+        {
+          "turn": 18,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "r",
+          "from": "b7",
+          "to": "b6",
+          "captured": null,
+          "timeMs": 1
+        },
+        {
+          "turn": 19,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "S",
+          "from": "g5",
+          "to": "g6",
+          "captured": null,
+          "timeMs": 26
+        },
+        {
+          "turn": 20,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "r",
+          "from": "b6",
+          "to": "b5",
+          "captured": null,
+          "timeMs": 1
+        },
+        {
+          "turn": 21,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "S",
+          "from": "g6",
+          "to": "g7",
+          "captured": null,
+          "timeMs": 25
+        },
+        {
+          "turn": 22,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "r",
+          "from": "b5",
+          "to": "b4",
+          "captured": null,
+          "timeMs": 1
+        },
+        {
+          "turn": 23,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "S",
+          "from": "g7",
+          "to": "g8",
+          "captured": "p",
+          "timeMs": 25
+        },
+        {
+          "turn": 24,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "r",
+          "from": "b4",
+          "to": "a4",
+          "captured": "S",
+          "timeMs": 1
+        },
+        {
+          "turn": 25,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "R",
+          "from": "h1",
+          "to": "h2",
+          "captured": null,
+          "timeMs": 26
+        },
+        {
+          "turn": 26,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "r",
+          "from": "a4",
+          "to": "a3",
+          "captured": null,
+          "timeMs": 1
+        },
+        {
+          "turn": 27,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "R",
+          "from": "h2",
+          "to": "h3",
+          "captured": null,
+          "timeMs": 27
+        },
+        {
+          "turn": 28,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "r",
+          "from": "a3",
+          "to": "a2",
+          "captured": null,
+          "timeMs": 1
+        },
+        {
+          "turn": 29,
+          "actor": "USER",
+          "side": "RED",
+          "piece": "R",
+          "from": "h3",
+          "to": "h4",
+          "captured": null,
+          "timeMs": 26
+        },
+        {
+          "turn": 30,
+          "actor": "BOT",
+          "side": "BLUE",
+          "piece": "r",
+          "from": "a2",
+          "to": "a1",
+          "captured": null,
+          "timeMs": 1
+        }
+      ]
+    }
+  ],
+  "finalRank": 2,
+  "stoppedBy": "MinhKiet_Top1"
+}

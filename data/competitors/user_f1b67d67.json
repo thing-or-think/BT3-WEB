@@ -1,0 +1,16 @@
+{
+  "id": "user_f1b67d67",
+  "username": "CaoThu_CPP",
+  "isBot": false,
+  "bestLanguage": "cpp",
+  "bestScore": 1640,
+  "elo": 1590,
+  "highestBotDefeated": 4,
+  "winsCount": 4,
+  "totalMatches": 5,
+  "bestExecTimeMs": 2498,
+  "submissionsCount": 1,
+  "updatedAt": "2026-10-25T14:06:39.819Z",
+  "stoppedBy": "MinhKiet_Top1",
+  "botFile": "bots/CaoThu_CPP.cpp"
+}

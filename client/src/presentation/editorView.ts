@@ -48,8 +48,11 @@ export class EditorView {
     return editor ? editor.value : '';
   }
 
-  public getUsername(): string {
+  public getUsername(fallbackUsername?: string): string {
+    if (fallbackUsername && fallbackUsername.trim()) {
+      return fallbackUsername.trim();
+    }
     const input = document.getElementById('usernameInput') as HTMLInputElement | null;
-    return (input?.value || 'SinhVien_BTL03').trim() || 'SinhVien_BTL03';
+    return (input?.value || 'Khach_ChuaDangNhap').trim();
   }
 }
