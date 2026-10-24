@@ -93,6 +93,7 @@
         </div>
 
         <div class="gateway-tech-tags">
+          <span class="tech-tag">🍪 Cookie Auth Session (7 Ngày)</span>
           <span class="tech-tag">⚡ 100% Client-Side</span>
           <span class="tech-tag">🌐 GitHub Pages Ready</span>
           <span class="tech-tag">🟢 playhtml Edge Sync</span>
@@ -136,6 +137,10 @@
                 <span class="input-icon">🔒</span>
                 <input id="gateLoginPass" class="auth-input" type="password" placeholder="Nhập mật khẩu..." required autocomplete="current-password" />
               </div>
+            </div>
+            <div class="auth-checkbox-row">
+              <input type="checkbox" id="gateRememberCookie" checked />
+              <label for="gateRememberCookie">🍪 Lưu tài khoản vào Cookie trình duyệt (Tự động đăng nhập 7 ngày)</label>
             </div>
             <button type="submit" id="btnGateSubmitLogin" class="auth-btn-submit glow-button">
               🚀 Vào Đấu Trường Chơi Ngay →
@@ -603,8 +608,8 @@
             </div>
 
             <div class="push-meta-bar">
-              <span>👤 Thách đấu với tên: <b id="ladderPreviewUser">SinhVien_BTL03</b></span>
-              <span>💻 Bot thách đấu: <b id="ladderPreviewLang">JAVASCRIPT</b></span>
+              <span>👤 Tài khoản thách đấu: <b id="ladderPreviewUser">Chưa đăng nhập</b> <span class="badge-cookie-verified">🔒 Cookie Verified</span></span>
+              <span>💻 Ngôn ngữ Bot: <b id="ladderPreviewLang">JAVASCRIPT</b></span>
               <button class="btn-outline" onclick="switchMainTab('studio')">✎ Chỉnh Sửa Code</button>
             </div>
           </div>
@@ -711,6 +716,10 @@
           <label for="loginPassword">Mật khẩu:</label>
           <input id="loginPassword" class="auth-input" type="password" placeholder="Nhập mật khẩu..." required />
         </div>
+        <div class="auth-checkbox-row">
+          <input type="checkbox" id="modalRememberCookie" checked />
+          <label for="modalRememberCookie">🍪 Lưu tài khoản vào Cookie trình duyệt (Tự động đăng nhập 7 ngày)</label>
+        </div>
         <button type="submit" id="btnSubmitLogin" class="auth-btn-submit">Đăng Nhập Vào Đấu Trường</button>
 
         <div class="auth-tip-card">
@@ -791,6 +800,33 @@
           <button type="button" class="btn-outline" onclick="closeAdminModal()">
             Đóng
           </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL XEM CHI TIẾT COOKIE LƯU TÀI KHOẢN (CHO GIẢNG VIÊN / KIỂM TRA ĐỀ BÀI) -->
+  <div id="cookieModalBackdrop" class="auth-modal-backdrop" onclick="closeCookieModalOnBackdrop(event)">
+    <div class="auth-modal-box" style="max-width: 520px;">
+      <button class="modal-close-btn" onclick="closeCookieModal()" title="Đóng">✕</button>
+
+      <div style="display:flex; align-items:center; gap:12px; margin-bottom:14px;">
+        <span style="font-size:28px;">🍪</span>
+        <div>
+          <h3 style="margin:0; font-size:16px; color:#f8fafc;">Thông Tin Cookie Phiên Đăng Nhập</h3>
+          <p style="margin:2px 0 0; font-size:12px; color:#94a3b8;">Hệ thống lưu tài khoản người dùng an toàn vào Cookie trình duyệt</p>
+        </div>
+      </div>
+
+      <div id="cookieModalBody" style="background:#090d15; border:1px solid #1e293b; border-radius:8px; padding:12px; font-size:12px; font-family:monospace; color:#cbd5e1; word-break:break-all; max-height:260px; overflow-y:auto;">
+        Đang nạp cookie...
+      </div>
+
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-top:14px;">
+        <span style="font-size:11px; color:#64748b;">Thời hạn: 7 ngày • SameSite=Lax</span>
+        <div style="display:flex; gap:8px;">
+          <button type="button" class="btn-mini" onclick="copyRawCookie()" title="Sao chép document.cookie">📋 Copy Cookie</button>
+          <button type="button" class="btn-outline btn-mini" onclick="closeCookieModal()">Đóng</button>
         </div>
       </div>
     </div>

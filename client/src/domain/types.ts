@@ -18,6 +18,7 @@ export interface MatchSummary {
   botLevel: number;
   botName: string;
   botElo: number;
+  userName?: string;
   userSide: Side;
   result: string;
   winnerSide: Side | null;
