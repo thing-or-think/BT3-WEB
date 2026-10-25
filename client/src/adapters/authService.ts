@@ -327,7 +327,6 @@ export class AuthService {
     password: string,
     confirmPassword?: string,
     role: UserRole = 'USER',
-    remember = true,
     remember = true
   ): Promise<AuthResult> {
     const cleanEmail = (email || '').trim().toLowerCase();
@@ -386,7 +385,7 @@ export class AuthService {
     users.push(newUser);
     this.saveUsers(users);
     // Lưu tài khoản vào Cookie và đăng nhập ngay
-    this.saveSession(newUser, remember, remember);
+    this.saveSession(newUser, remember);
 
     return { success: true, user: newUser };
   }
