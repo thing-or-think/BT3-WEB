@@ -918,7 +918,7 @@ function renderAuthHeader(user: UserProfile | null): void {
       container.innerHTML = `
         <div class="topbar-guest-tag">🔒 Vui lòng đăng nhập để mở khóa</div>
         <button class="btn-mini" onclick="openAuthModal('login')" title="Đăng nhập tài khoản">🔑 Đăng Nhập</button>
-        <button class="btn-mini btn-primary" onclick="openAuthModal('register')" title="Tạo tài khoản">✨ Tạo Tài Khoản</button>
+        <button class="btn-mini btn-primary" onclick="openAuthModal('register')" title="Đăng ký tài khoản">📝 Đăng Ký</button>
       `;
     }
   } else {
@@ -939,7 +939,7 @@ function renderAuthHeader(user: UserProfile | null): void {
         <div class="user-profile-badge">
           <div class="user-avatar-circle">${user.role === 'ADMIN' ? '👑' : '👤'}</div>
           <div class="user-info-text">
-            <span class="user-name-title">${user.username}</span>
+            <span class="user-name-title">${user.username} <span class="badge-cookie" onclick="openCookieModal()" title="Bấm xem chi tiết Cookie phiên đăng nhập">🍪 Cookie</span></span>
             <span style="font-size:11px; color:#94a3b8;">${roleBadge} • <b>${user.elo}</b> pts</span>
           </div>
           <button class="btn-mini btn-cookie-tag" onclick="openCookieModal()" title="Kiểm tra Cookie lưu tài khoản">🍪 Cookie</button>
@@ -1108,7 +1108,7 @@ async function handleGateLoginSubmit(e: Event): Promise<void> {
   }
 
   const remember = rememberBox ? rememberBox.checked : true;
-  const res = await authService.login(emailInput.value, passInput.value, remember);
+  const res = await authService.login(idInput.value, passInput.value, remember);
   if (btn) {
     btn.disabled = false;
     btn.textContent = '🚀 Đăng Nhập Vào Đấu Trường →';
@@ -1116,7 +1116,7 @@ async function handleGateLoginSubmit(e: Event): Promise<void> {
 
   if (res.success && res.user) {
     playhtmlAdapter.triggerConfetti();
-    appendDebugLog(`[AUTH] Đăng nhập thành công: [${res.user.username}] (${res.user.role}) • Đã lưu phiên vào Cookie trình duyệt (7 ngày).`, 'success');
+    appendDebugLog(`[AUTH] Đăng nhập thành công tài khoản [${res.user.username}] (${res.user.role}) • Đã lưu phiên vào Cookie trình duyệt (7 ngày).`, 'success');
   } else {
     showGateAlertLogin(res.error || 'Đăng nhập thất bại!');
   }
@@ -1142,8 +1142,8 @@ async function handleGateRegisterSubmit(e: Event): Promise<void> {
     btn.textContent = '⏳ Đang tạo tài khoản & lưu Cookie...';
   }
 
-  const remember = rememberBox ? rememberBox.checked : true;
-  const res = await authService.register(emailInput.value, passInput.value, passConfirmInput?.value, 'USER', remember);
+  const role = (roleSelect?.value === 'ADMIN' ? 'ADMIN' : 'USER') as any;
+  const res = await authService.register(userInput.value, emailInput.value, passInput.value, role, true);
   if (btn) {
     btn.disabled = false;
     btn.textContent = '✨ Tạo Tài Khoản & Vào Chơi →';
@@ -1256,7 +1256,8 @@ async function handleRegisterSubmit(e: Event): Promise<void> {
     btn.textContent = '⏳ Đang tạo tài khoản & lưu Cookie...';
   }
 
-  const res = await authService.register(emailInput.value, passInput.value, passConfirmInput?.value, 'USER', true);
+  const role = (roleSelect?.value === 'ADMIN' ? 'ADMIN' : 'USER') as any;
+  const res = await authService.register(userInput.value, emailInput.value, passInput.value, role, true);
   if (btn) {
     btn.disabled = false;
     btn.textContent = 'Tạo Tài Khoản Mới';
@@ -1265,8 +1266,8 @@ async function handleRegisterSubmit(e: Event): Promise<void> {
   if (res.success && res.user) {
     closeAuthModal();
     playhtmlAdapter.triggerConfetti();
-    appendDebugLog(`[AUTH] Tạo tài khoản modal thành công: [${res.user.username}] • Đã lưu vào Cookie.`, 'success');
-    alert(`🎉 Tạo tài khoản thành công! Bạn đã đăng nhập với tên [${res.user.username}].\n🍪 Phiên làm việc đã được kích hoạt và lưu vào Cookie trình duyệt (7 ngày).`);
+    appendDebugLog(`[AUTH] Đăng ký modal thành công: [${res.user.username}] • Đã lưu vào Cookie.`, 'success');
+    alert(`🎉 Đăng ký tài khoản thành công! Bạn hiện đang đăng nhập với vai trò [${res.user.role}].\n🍪 Phiên làm việc đã được kích hoạt và lưu vào Cookie trình duyệt (7 ngày).`);
   } else {
     showAuthAlert(res.error || 'Tạo tài khoản thất bại!');
   }

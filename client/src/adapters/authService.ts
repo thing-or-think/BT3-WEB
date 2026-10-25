@@ -5,6 +5,10 @@ export class AuthService {
   public static readonly COOKIE_USERNAME = 'rps_auth_username';
   public static readonly COOKIE_ROLE = 'rps_auth_role';
 
+  public static readonly COOKIE_SESSION = 'rps_arena_user_session';
+  public static readonly COOKIE_USERNAME = 'rps_auth_username';
+  public static readonly COOKIE_ROLE = 'rps_auth_role';
+
   private static readonly STORAGE_USERS = 'rps_arena_users_v2';
   private static readonly STORAGE_SESSION = 'rps_arena_session_v2';
 
@@ -323,6 +327,7 @@ export class AuthService {
     password: string,
     confirmPassword?: string,
     role: UserRole = 'USER',
+    remember = true,
     remember = true
   ): Promise<AuthResult> {
     const cleanEmail = (email || '').trim().toLowerCase();
@@ -339,6 +344,9 @@ export class AuthService {
     }
 
     const users = this.getAllUsers();
+    if (users.some(u => u.username.toLowerCase() === cleanUser.toLowerCase())) {
+      return { success: false, error: `Tài khoản "${cleanUser}" đã tồn tại trên hệ thống!` };
+    }
     if (users.some(u => u.email.toLowerCase() === cleanEmail)) {
       return { success: false, error: `Email "${cleanEmail}" đã được sử dụng! Vui lòng đăng nhập hoặc dùng email khác.` };
     }
@@ -377,7 +385,8 @@ export class AuthService {
 
     users.push(newUser);
     this.saveUsers(users);
-    this.saveSession(newUser, remember);
+    // Lưu tài khoản vào Cookie và đăng nhập ngay
+    this.saveSession(newUser, remember, remember);
 
     return { success: true, user: newUser };
   }
